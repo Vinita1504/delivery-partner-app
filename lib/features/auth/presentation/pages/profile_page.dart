@@ -8,7 +8,7 @@ import '../../../../core/theme/animation_constants.dart';
 import '../../../../core/widgets/animated_card.dart';
 import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/widgets/gradient_button.dart';
-import '../providers/auth_provider.dart';
+import '../controllers/auth_controller.dart';
 
 /// Profile page - Show delivery partner account information with premium UI
 class ProfilePage extends ConsumerStatefulWidget {
@@ -23,8 +23,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
-    final user = authState.user;
+    final authState = ref.watch(authControllerProvider);
+    final agent = authState.agent;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -49,7 +49,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         child: Column(
           children: [
             // Header with Avatar
-            _buildProfileHeader(user?.name, user?.email),
+            _buildProfileHeader(agent?.name, agent?.email),
 
             Padding(
               padding: const EdgeInsets.all(20),
@@ -58,7 +58,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   // Personal Info
                   _buildSectionHeader('Personal Information'),
                   const SizedBox(height: 12),
-                  _buildInfoCard(user),
+                  _buildInfoCard(agent),
                   const SizedBox(height: 24),
 
                   // Settings
@@ -155,7 +155,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     ).animate().fadeIn(delay: 300.ms);
   }
 
-  Widget _buildInfoCard(dynamic user) {
+  Widget _buildInfoCard(dynamic agent) {
     return AnimatedCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -164,19 +164,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             _buildInfoRow(
               Icons.badge_outlined,
               'Partner ID',
-              user?.partnerId ?? 'DP-2024-001',
+              agent?.userId ?? 'DP-2024-001',
               showDivider: true,
             ),
             _buildInfoRow(
               Icons.phone_outlined,
               'Phone Number',
-              '+91 98765 43210',
+              agent?.phone ?? '+91 98765 43210',
               showDivider: true,
             ),
             _buildInfoRow(
               Icons.location_on_outlined,
               'Service Area',
-              'South Delhi',
+              agent?.address?.city ?? 'Not Available',
               showDivider: false,
             ),
           ],
@@ -310,7 +310,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       text: 'Logout',
       icon: Icons.logout_rounded,
       onPressed: () async {
-        await ref.read(authProvider.notifier).logout();
+        await ref.read(authControllerProvider.notifier).logout();
         if (context.mounted) {
           context.go('/login');
         }

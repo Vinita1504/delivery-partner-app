@@ -21,7 +21,7 @@ class _HelpPageState extends State<HelpPage> {
   IssueType? _selectedIssue;
   final _descriptionController = TextEditingController();
   bool _isLoading = false;
-
+   
   @override
   void dispose() {
     _descriptionController.dispose();

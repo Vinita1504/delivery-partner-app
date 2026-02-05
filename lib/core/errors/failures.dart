@@ -37,6 +37,12 @@ class UnknownFailure extends Failure {
   });
 }
 
+class TimeoutFailure extends Failure {
+  const TimeoutFailure({
+    super.message = 'Request timed out. Please try again.',
+  });
+}
+
 /// Custom exceptions
 class ServerException implements Exception {
   final String message;

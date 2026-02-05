@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:delivery_partner_app/features/auth/presentation/pages/login_page.dart';
-import 'package:delivery_partner_app/features/auth/presentation/pages/profile_page.dart';
-import 'package:delivery_partner_app/features/auth/presentation/pages/change_password_page.dart';
-import 'package:delivery_partner_app/features/dashboard/presentation/pages/dashboard_page.dart';
-import 'package:delivery_partner_app/features/orders/presentation/pages/assigned_orders_page.dart';
-import 'package:delivery_partner_app/features/order_history/presentation/pages/order_history_page.dart';
-import 'package:delivery_partner_app/features/orders/presentation/pages/order_details_page.dart';
-import 'package:delivery_partner_app/features/orders/presentation/pages/otp_verification_page.dart';
-import 'package:delivery_partner_app/features/orders/presentation/pages/cod_confirmation_page.dart';
-import 'package:delivery_partner_app/features/orders/presentation/pages/delivery_success_page.dart';
-import 'package:delivery_partner_app/features/help/presentation/pages/help_page.dart';
+
+import '../../features/auth/presentation/controllers/auth_controller.dart';
+import '../../features/auth/presentation/pages/change_password_page.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/profile_page.dart';
+import '../../features/dashboard/presentation/pages/dashboard_page.dart';
+import '../../features/help/presentation/pages/help_page.dart';
+import '../../features/order_history/presentation/pages/order_history_page.dart';
+import '../../features/orders/presentation/pages/assigned_orders_page.dart';
+import '../../features/orders/presentation/pages/cod_confirmation_page.dart';
+import '../../features/orders/presentation/pages/delivery_success_page.dart';
+import '../../features/orders/presentation/pages/order_details_page.dart';
+import '../../features/orders/presentation/pages/otp_verification_page.dart';
 
 /// Route paths
 class AppRoutes {
@@ -29,105 +32,126 @@ class AppRoutes {
   static const String help = '/help';
 }
 
-/// GoRouter configuration
-final GoRouter appRouter = GoRouter(
-  initialLocation: AppRoutes.login,
-  debugLogDiagnostics: true,
-  routes: [
-    // Login
-    GoRoute(
-      path: AppRoutes.login,
-      name: 'login',
-      builder: (context, state) => const LoginPage(),
-    ),
+/// Provider for the GoRouter configuration
+final goRouterProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authControllerProvider);
 
-    // Dashboard (Home)
-    GoRoute(
-      path: AppRoutes.dashboard,
-      name: 'dashboard',
-      builder: (context, state) => const DashboardPage(),
-    ),
+  return GoRouter(
+    initialLocation: AppRoutes.login,
+    debugLogDiagnostics: true,
+    redirect: (context, state) {
+      final isLoggedIn = authState.isAuthenticated;
+      final isLoggingIn = state.uri.toString() == AppRoutes.login;
 
-    // Assigned Orders
-    GoRoute(
-      path: AppRoutes.assignedOrders,
-      name: 'assignedOrders',
-      builder: (context, state) => const AssignedOrdersPage(),
-    ),
+      // If user is not logged in and not on login page, redirect to login
+      if (!isLoggedIn && !isLoggingIn) {
+        return AppRoutes.login;
+      }
 
-    // Order History
-    GoRoute(
-      path: AppRoutes.orderHistory,
-      name: 'orderHistory',
-      builder: (context, state) => const OrderHistoryPage(),
-    ),
+      // If user is logged in and on login page, redirect to dashboard
+      if (isLoggedIn && isLoggingIn) {
+        return AppRoutes.dashboard;
+      }
 
-    // Order Details
-    GoRoute(
-      path: '/order/:orderId',
-      name: 'orderDetails',
-      builder: (context, state) {
-        final orderId = state.pathParameters['orderId']!;
-        return OrderDetailsPage(orderId: orderId);
-      },
-      routes: [
-        // OTP Verification (nested under order)
-        GoRoute(
-          path: 'otp',
-          name: 'otpVerification',
-          builder: (context, state) {
-            final orderId = state.pathParameters['orderId']!;
-            return OtpVerificationPage(orderId: orderId);
-          },
-        ),
-        // COD Confirmation (nested under order)
-        GoRoute(
-          path: 'cod',
-          name: 'codConfirmation',
-          builder: (context, state) {
-            final orderId = state.pathParameters['orderId']!;
-            final extra = state.extra as Map<String, dynamic>?;
-            final amount = extra?['amount'] as double? ?? 0.0;
-            return CodConfirmationPage(orderId: orderId, amount: amount);
-          },
-        ),
-        // Delivery Success (nested under order)
-        GoRoute(
-          path: 'success',
-          name: 'deliverySuccess',
-          builder: (context, state) {
-            final orderId = state.pathParameters['orderId']!;
-            return DeliverySuccessPage(orderId: orderId);
-          },
-        ),
-      ],
-    ),
+      // No redirect required
+      return null;
+    },
+    routes: [
+      // Login
+      GoRoute(
+        path: AppRoutes.login,
+        name: 'login',
+        builder: (context, state) => const LoginPage(),
+      ),
 
-    // Profile
-    GoRoute(
-      path: AppRoutes.profile,
-      name: 'profile',
-      builder: (context, state) => const ProfilePage(),
-      routes: [
-        GoRoute(
-          path: 'change-password',
-          name: 'changePassword',
-          builder: (context, state) => const ChangePasswordPage(),
-        ),
-      ],
-    ),
+      // Dashboard (Home)
+      GoRoute(
+        path: AppRoutes.dashboard,
+        name: 'dashboard',
+        builder: (context, state) => const DashboardPage(),
+      ),
 
-    // Help
-    GoRoute(
-      path: AppRoutes.help,
-      name: 'help',
-      builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>?;
-        final orderId = extra?['orderId'] as String?;
-        return HelpPage(orderId: orderId);
-      },
-    ),
-  ],
-  errorBuilder: (context, state) =>
-      Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
-);
+      // Assigned Orders
+      GoRoute(
+        path: AppRoutes.assignedOrders,
+        name: 'assignedOrders',
+        builder: (context, state) => const AssignedOrdersPage(),
+      ),
+
+      // Order History
+      GoRoute(
+        path: AppRoutes.orderHistory,
+        name: 'orderHistory',
+        builder: (context, state) => const OrderHistoryPage(),
+      ),
+
+      // Order Details
+      GoRoute(
+        path: '/order/:orderId',
+        name: 'orderDetails',
+        builder: (context, state) {
+          final orderId = state.pathParameters['orderId']!;
+          return OrderDetailsPage(orderId: orderId);
+        },
+        routes: [
+          // OTP Verification (nested under order)
+          GoRoute(
+            path: 'otp',
+            name: 'otpVerification',
+            builder: (context, state) {
+              final orderId = state.pathParameters['orderId']!;
+              return OtpVerificationPage(orderId: orderId);
+            },
+          ),
+          // COD Confirmation (nested under order)
+          GoRoute(
+            path: 'cod',
+            name: 'codConfirmation',
+            builder: (context, state) {
+              final orderId = state.pathParameters['orderId']!;
+              final extra = state.extra as Map<String, dynamic>?;
+              final amount = extra?['amount'] as double? ?? 0.0;
+              return CodConfirmationPage(orderId: orderId, amount: amount);
+            },
+          ),
+          // Delivery Success (nested under order)
+          GoRoute(
+            path: 'success',
+            name: 'deliverySuccess',
+            builder: (context, state) {
+              final orderId = state.pathParameters['orderId']!;
+              return DeliverySuccessPage(orderId: orderId);
+            },
+          ),
+        ],
+      ),
+
+      // Profile
+      GoRoute(
+        path: AppRoutes.profile,
+        name: 'profile',
+        builder: (context, state) => const ProfilePage(),
+        routes: [
+          GoRoute(
+            path: 'change-password',
+            name: 'changePassword',
+            builder: (context, state) => const ChangePasswordPage(),
+          ),
+        ],
+      ),
+
+      // Help
+      GoRoute(
+        path: AppRoutes.help,
+        name: 'help',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final orderId = extra?['orderId'] as String?;
+          return HelpPage(orderId: orderId);
+        },
+      ),
+    ],
+    errorBuilder: (context, state) =>
+        Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
+  );
+});

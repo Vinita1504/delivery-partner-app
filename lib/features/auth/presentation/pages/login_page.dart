@@ -8,7 +8,8 @@ import '../../../../core/theme/animation_constants.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/text_fields.dart';
 import '../../../../core/utils/validators.dart';
-import '../providers/auth_provider.dart';
+import '../controllers/auth_controller.dart';
+import '../controllers/auth_state.dart';
 
 /// Login page - Authenticate delivery partner with animations
 class LoginPage extends ConsumerStatefulWidget {
@@ -35,7 +36,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final success = await ref
-        .read(authProvider.notifier)
+        .read(authControllerProvider.notifier)
         .login(_emailController.text.trim(), _passwordController.text);
 
     if (success && mounted) {
@@ -45,10 +46,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
+    final authState = ref.watch(authControllerProvider);
 
     // Show error snackbar if there's an error
-    ref.listen<AuthState>(authProvider, (previous, next) {
+    ref.listen<AuthState>(authControllerProvider, (previous, next) {
       if (next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
