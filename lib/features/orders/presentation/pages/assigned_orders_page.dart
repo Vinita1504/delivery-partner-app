@@ -34,13 +34,7 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
     final ordersState = ref.watch(ordersProvider);
 
     return Scaffold(
-      key: _scaffoldKey,
-      drawer: const AppDrawer(currentRoute: '/assigned-orders'),
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu_rounded),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
         title: const Text('Assigned Orders'),
         actions: [
           IconButton(

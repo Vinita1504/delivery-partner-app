@@ -91,13 +91,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
-      drawer: const AppDrawer(currentRoute: '/order-history'),
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu_rounded),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
         title: const Text('Order History'),
         bottom: TabBar(
           controller: _tabController,

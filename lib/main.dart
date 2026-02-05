@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,8 +13,8 @@ import 'features/auth/presentation/controllers/auth_controller.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Disable Google Fonts HTTP fetching to prevent path_provider issues
-  GoogleFonts.config.allowRuntimeFetching = false;
+  // Enable Google Fonts runtime fetching to download fonts at runtime
+  GoogleFonts.config.allowRuntimeFetching = true;
 
   // Initialize SharedPreferences
   final sharedPreferences = await SharedPreferences.getInstance();
@@ -49,6 +50,10 @@ void main() async {
   );
 }
 
+/// Global key for ScaffoldMessenger to persist snackbars across navigation
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+
 /// Main application widget
 class DeliveryPartnerApp extends ConsumerWidget {
   const DeliveryPartnerApp({super.key});
@@ -57,11 +62,17 @@ class DeliveryPartnerApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(goRouterProvider);
 
-    return MaterialApp.router(
-      title: 'Delivery Partner',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      routerConfig: router,
+    return ScreenUtilInit(
+      designSize: const Size(390, 844), // iPhone 14 dimensions
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) => MaterialApp.router(
+        title: 'Delivery Partner',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        routerConfig: router,
+        scaffoldMessengerKey: scaffoldMessengerKey,
+      ),
     );
   }
 }

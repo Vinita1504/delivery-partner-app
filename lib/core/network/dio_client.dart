@@ -11,10 +11,11 @@ class DioClient {
   // Default tenant ID - can be updated if needed
   static const String defaultTenantId = 'Tenant_02';
   static String _tenantId = defaultTenantId;
-
+  
   // Base URL for the API
   // static const String baseUrl = 'https://dataservices.workbird.cloud';
-  static const String baseUrl = 'https://afd28136fdc4.ngrok-free.app';
+  static const String baseUrl =
+      'https://dbca-2409-40e4-11e9-945d-3c58-4e72-5142-74e0.ngrok-free.app';
 
   /// Setter for tenant ID
   static void setTenantId(String id) {

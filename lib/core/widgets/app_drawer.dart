@@ -1,281 +1,229 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/animation_constants.dart';
+import '../../features/auth/presentation/controllers/auth_controller.dart';
+import '../../main.dart';
+import '../extensions/extensions.dart';
+import '../routes/app_routes.dart';
 
 /// Navigation drawer for the app
-class AppDrawer extends StatefulWidget {
+class AppDrawer extends ConsumerWidget {
   final String currentRoute;
-  final String? userName;
-  final String? userEmail;
 
-  const AppDrawer({
-    super.key,
-    required this.currentRoute,
-    this.userName,
-    this.userEmail,
-  });
+  const AppDrawer({super.key, required this.currentRoute});
 
   @override
-  State<AppDrawer> createState() => _AppDrawerState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authControllerProvider);
+    final agent = authState.agent;
 
-class _AppDrawerState extends State<AppDrawer> {
-  @override
-  Widget build(BuildContext context) {
     return Drawer(
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(),
-            const Divider(height: 1),
-
-            // Menu items
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                children: [
-                  _buildMenuItem(
-                    icon: Icons.dashboard_rounded,
-                    title: 'Dashboard',
-                    route: '/dashboard',
-                    index: 0,
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.assignment_rounded,
-                    title: 'Assigned Orders',
-                    route: '/assigned-orders',
-                    index: 1,
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.history_rounded,
-                    title: 'Order History',
-                    route: '/order-history',
-                    index: 2,
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Divider(),
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.person_rounded,
-                    title: 'Profile',
-                    route: '/profile',
-                    index: 3,
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.help_outline_rounded,
-                    title: 'Help & Support',
-                    route: '/help',
-                    index: 4,
-                  ),
+      child: Column(
+        children: [
+          // User Account Header
+          UserAccountsDrawerHeader(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  context.colorScheme.primary,
+                  context.colorScheme.primary.withValues(alpha: 0.8),
                 ],
               ),
             ),
-
-            // Logout button
-            const Divider(height: 1),
-            _buildLogoutButton(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withValues(alpha: 0.85),
-          ],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Avatar
-          Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.white.withValues(alpha: 0.3),
-                    width: 3,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.person_rounded,
-                  size: 36,
-                  color: AppColors.primary,
-                ),
-              )
-              .animate()
-              .scale(
-                begin: const Offset(0.8, 0.8),
-                duration: AnimationConstants.normal,
-                curve: AnimationConstants.defaultCurve,
-              )
-              .fadeIn(),
-          const SizedBox(height: 16),
-
-          // Name
-          Text(
-                widget.userName ?? 'Delivery Partner',
-                style: AppTextStyles.heading4.copyWith(color: AppColors.white),
-              )
-              .animate()
-              .fadeIn(delay: 100.ms)
-              .slideX(begin: -0.1, duration: AnimationConstants.normal),
-
-          const SizedBox(height: 4),
-
-          // Email
-          Text(
-                widget.userEmail ?? 'partner@dehatfresh.com',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.white.withValues(alpha: 0.8),
-                ),
-              )
-              .animate()
-              .fadeIn(delay: 150.ms)
-              .slideX(begin: -0.1, duration: AnimationConstants.normal),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required String route,
-    required int index,
-  }) {
-    final isSelected = widget.currentRoute == route;
-
-    return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          child: Material(
-            color: isSelected ? AppColors.primarySurface : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: () {
-                Navigator.pop(context);
-                if (!isSelected) {
-                  context.go(route);
-                }
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      icon,
-                      size: 22,
-                      color: isSelected ? AppColors.primary : AppColors.grey600,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: AppTextStyles.bodyLarge.copyWith(
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.textPrimary,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    if (isSelected)
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                  ],
+            currentAccountPicture: CircleAvatar(
+              backgroundColor: context.colorScheme.surface,
+              radius: 32.r,
+              child: Text(
+                agent?.name.substring(0, 1).toUpperCase() ?? 'D',
+                style: context.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: context.colorScheme.primary,
                 ),
               ),
             ),
+            accountName: Text(
+              agent?.name ?? 'Delivery Partner',
+              style: context.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: context.colorScheme.onPrimary,
+              ),
+            ),
+            accountEmail: Text(
+              agent?.email ?? 'partner@dehatfresh.com',
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: context.colorScheme.onPrimary.withValues(alpha: 0.9),
+              ),
+            ),
           ),
-        )
-        .animate()
-        .fadeIn(delay: Duration(milliseconds: 50 * index))
-        .slideX(
-          begin: -0.1,
-          duration: AnimationConstants.normal,
-          curve: AnimationConstants.defaultCurve,
-        );
-  }
 
-  Widget _buildLogoutButton() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Material(
-        color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: _handleLogout,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          // Menu Items
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
               children: [
-                const Icon(
-                  Icons.logout_rounded,
-                  size: 20,
-                  color: AppColors.error,
+                _DrawerMenuItem(
+                  icon: Icons.dashboard_rounded,
+                  title: 'Dashboard',
+                  route: AppRoutes.dashboard,
+                  currentRoute: currentRoute,
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  'Logout',
-                  style: AppTextStyles.buttonMedium.copyWith(
-                    color: AppColors.error,
-                  ),
+                _DrawerMenuItem(
+                  icon: Icons.assignment_rounded,
+                  title: 'Assigned Orders',
+                  route: AppRoutes.assignedOrders,
+                  currentRoute: currentRoute,
+                ),
+                _DrawerMenuItem(
+                  icon: Icons.history_rounded,
+                  title: 'Order History',
+                  route: AppRoutes.orderHistory,
+                  currentRoute: currentRoute,
+                ),
+                const Divider(),
+                _DrawerMenuItem(
+                  icon: Icons.person_rounded,
+                  title: 'Profile',
+                  route: AppRoutes.profile,
+                  currentRoute: currentRoute,
+                ),
+                _DrawerMenuItem(
+                  icon: Icons.lock_outline_rounded,
+                  title: 'Change Password',
+                  route: AppRoutes.changePassword,
+                  currentRoute: currentRoute,
+                ),
+                _DrawerMenuItem(
+                  icon: Icons.help_outline_rounded,
+                  title: 'Help & Support',
+                  route: AppRoutes.help,
+                  currentRoute: currentRoute,
                 ),
               ],
             ),
           ),
-        ),
+
+          // Logout Button
+          const Divider(height: 1),
+          _LogoutTile(ref: ref),
+        ],
       ),
     );
   }
+}
 
-  void _handleLogout() {
+/// Individual drawer menu item widget
+class _DrawerMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String route;
+  final String currentRoute;
+
+  const _DrawerMenuItem({
+    required this.icon,
+    required this.title,
+    required this.route,
+    required this.currentRoute,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = currentRoute == route;
+
+    return ListTile(
+      leading: Icon(
+        icon,
+        size: 22.sp,
+        color: isSelected
+            ? context.colorScheme.primary
+            : context.colorScheme.onSurfaceVariant,
+      ),
+      title: Text(
+        title,
+        style: context.textTheme.bodyLarge?.copyWith(
+          color: isSelected
+              ? context.colorScheme.primary
+              : context.colorScheme.onSurface,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+        ),
+      ),
+      selected: isSelected,
+      selectedTileColor: context.colorScheme.primary.withValues(alpha: 0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+      onTap: () {
+        if (!isSelected) {
+          context.push(route);
+        }
+      },
+    );
+  }
+}
+
+/// Logout tile widget
+class _LogoutTile extends StatelessWidget {
+  final WidgetRef ref;
+
+  const _LogoutTile({required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(
+        Icons.logout_rounded,
+        size: 22.sp,
+        color: context.colorScheme.error,
+      ),
+      title: Text(
+        'Logout',
+        style: context.textTheme.bodyLarge?.copyWith(
+          color: context.colorScheme.error,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      onTap: () => _handleLogout(context),
+    );
+  }
+
+  void _handleLogout(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Logout', style: dialogContext.textTheme.titleLarge),
+        content: Text(
+          'Are you sure you want to logout?',
+          style: dialogContext.textTheme.bodyMedium,
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              Navigator.pop(dialogContext);
               Navigator.pop(context);
-              context.go('/login');
+              await ref.read(authControllerProvider.notifier).logout();
+              scaffoldMessengerKey.currentState?.showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.white),
+                      SizedBox(width: 12.w),
+                      const Text('Logged out successfully!'),
+                    ],
+                  ),
+                  backgroundColor: Colors.green.shade600,
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
             },
-            child: Text('Logout', style: TextStyle(color: AppColors.error)),
+            child: Text(
+              'Logout',
+              style: TextStyle(color: context.colorScheme.error),
+            ),
           ),
         ],
       ),

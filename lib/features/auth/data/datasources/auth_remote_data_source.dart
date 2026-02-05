@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 
 import '../../../../core/constants/api_endpoints.dart';
@@ -23,22 +25,22 @@ class AuthRemoteDataSource implements AuthDataSource {
       );
 
       final data = response.data as Map<String, dynamic>;
-
+      log('Login response in [AUTH_REMOTE_DATA_SOURCE]: ${response.data}');
       // Check if login was successful
-      if (data['success'] == true) {
-        return LoginResponseDTO.fromJson(data);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return LoginResponseDTO.fromJson(data['data']);
       }
 
       // Handle error response
       throw ServerException(
-        message: data['message'] as String? ?? 'Login failed',
+        message: data['data']['message'] as String? ?? 'Login failed',
         statusCode: response.statusCode,
       );
     } on DioException catch (e) {
       // Handle specific error codes
       if (e.response?.statusCode == 401) {
         final message =
-            e.response?.data?['message'] as String? ?? 'Invalid credentials';
+            e.response?.data['data']['message'] as String? ?? 'Invalid credentials';
         throw ServerException(message: message, statusCode: 401);
       }
 

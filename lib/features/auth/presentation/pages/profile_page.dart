@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/animation_constants.dart';
 import '../../../../core/widgets/animated_card.dart';
-import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/widgets/gradient_button.dart';
+import '../../../../main.dart';
 import '../controllers/auth_controller.dart';
+import '../../domain/entities/delivery_agent_entity.dart';
 
 /// Profile page - Show delivery partner account information with premium UI
 class ProfilePage extends ConsumerStatefulWidget {
@@ -19,25 +19,17 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final agent = authState.agent;
 
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: AppColors.grey50,
-      drawer: const AppDrawer(currentRoute: '/profile'),
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         iconTheme: const IconThemeData(color: AppColors.white),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu_rounded),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
         title: Text(
           'My Profile',
           style: AppTextStyles.heading4.copyWith(color: AppColors.white),
@@ -58,13 +50,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   // Personal Info
                   _buildSectionHeader('Personal Information'),
                   const SizedBox(height: 12),
-                  _buildInfoCard(agent),
+                  _buildPersonalInfoCard(agent),
                   const SizedBox(height: 24),
 
-                  // Settings
-                  _buildSectionHeader('Settings'),
+                  // Vehicle Info
+                  _buildSectionHeader('Vehicle Information'),
                   const SizedBox(height: 12),
-                  _buildSettingsCard(),
+                  _buildVehicleInfoCard(agent),
+                  const SizedBox(height: 24),
+
+                  // Address Info
+                  _buildSectionHeader('Address'),
+                  const SizedBox(height: 12),
+                  _buildAddressCard(agent),
+                  const SizedBox(height: 24),
+
+                  // Documents
+                  _buildSectionHeader('Documents'),
+                  const SizedBox(height: 12),
+                  _buildDocumentsCard(agent),
                   const SizedBox(height: 32),
 
                   // Logout Button
@@ -155,7 +159,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     ).animate().fadeIn(delay: 300.ms);
   }
 
-  Widget _buildInfoCard(dynamic agent) {
+  Widget _buildPersonalInfoCard(DeliveryAgentEntity? agent) {
     return AnimatedCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -164,25 +168,155 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             _buildInfoRow(
               Icons.badge_outlined,
               'Partner ID',
-              agent?.userId ?? 'DP-2024-001',
+              agent?.userId ?? 'Not Available',
               showDivider: true,
             ),
             _buildInfoRow(
               Icons.phone_outlined,
               'Phone Number',
-              agent?.phone ?? '+91 98765 43210',
+              agent?.phone ?? 'Not Available',
               showDivider: true,
             ),
             _buildInfoRow(
-              Icons.location_on_outlined,
-              'Service Area',
-              agent?.address?.city ?? 'Not Available',
+              Icons.email_outlined,
+              'Email Address',
+              agent?.email ?? 'Not Available',
               showDivider: false,
             ),
           ],
         ),
       ),
     ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildVehicleInfoCard(DeliveryAgentEntity? agent) {
+    String vehicleTypeLabel = 'Not Available';
+    if (agent?.vehicleType != null) {
+      switch (agent!.vehicleType.toLowerCase()) {
+        case 'twowheeler':
+          vehicleTypeLabel = 'Two Wheeler';
+          break;
+        case 'threewheeler':
+          vehicleTypeLabel = 'Three Wheeler';
+          break;
+        case 'fourwheeler':
+          vehicleTypeLabel = 'Four Wheeler';
+          break;
+        default:
+          vehicleTypeLabel = agent.vehicleType;
+      }
+    }
+
+    return AnimatedCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildInfoRow(
+              Icons.two_wheeler_outlined,
+              'Vehicle Type',
+              vehicleTypeLabel,
+              showDivider: true,
+            ),
+            _buildInfoRow(
+              Icons.directions_car_outlined,
+              'Vehicle Name',
+              agent?.vehicleName ?? 'Not Available',
+              showDivider: true,
+            ),
+            _buildInfoRow(
+              Icons.confirmation_number_outlined,
+              'Vehicle Number',
+              agent?.vehicleNo ?? 'Not Available',
+              showDivider: true,
+            ),
+            _buildInfoRow(
+              Icons.card_membership_outlined,
+              'License Number',
+              agent?.license ?? 'Not Available',
+              showDivider: false,
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildAddressCard(DeliveryAgentEntity? agent) {
+    final address = agent?.address;
+    String fullAddress = 'Not Available';
+    if (address != null) {
+      fullAddress =
+          '${address.street}, ${address.city}, ${address.state} - ${address.zip}, ${address.country}';
+    }
+
+    return AnimatedCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.location_on_outlined,
+                color: AppColors.primary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Service Area Address',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    fullAddress,
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildDocumentsCard(DeliveryAgentEntity? agent) {
+    return AnimatedCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildInfoRow(
+              Icons.credit_card_outlined,
+              'Aadhaar Number',
+              agent?.aadhaar ?? 'Not Available',
+              showDivider: true,
+            ),
+            _buildInfoRow(
+              Icons.account_balance_wallet_outlined,
+              'PAN Number',
+              agent?.pan ?? 'Not Available',
+              showDivider: false,
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: 550.ms).slideY(begin: 0.1);
   }
 
   Widget _buildInfoRow(
@@ -234,86 +368,27 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  Widget _buildSettingsCard() {
-    return AnimatedCard(
-      child: Column(
-        children: [
-          _buildSettingsItem(
-            Icons.lock_outline_rounded,
-            'Change Password',
-            () => context.push('/profile/change-password'),
-            showDivider: true,
-          ),
-          _buildSettingsItem(
-            Icons.notifications_outlined,
-            'Notifications',
-            () {},
-            showDivider: true,
-            trailing: Switch(
-              value: true,
-              onChanged: (v) {},
-              activeColor: AppColors.primary,
-            ),
-          ),
-          _buildSettingsItem(
-            Icons.help_outline_rounded,
-            'Help & Support',
-            () => context.push('/help'),
-            showDivider: false,
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1);
-  }
-
-  Widget _buildSettingsItem(
-    IconData icon,
-    String title,
-    VoidCallback onTap, {
-    bool showDivider = true,
-    Widget? trailing,
-  }) {
-    return Column(
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: trailing == null ? onTap : null,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              child: Row(
-                children: [
-                  Icon(icon, color: AppColors.grey600, size: 24),
-                  const SizedBox(width: 16),
-                  Expanded(child: Text(title, style: AppTextStyles.bodyLarge)),
-                  if (trailing != null)
-                    trailing
-                  else
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppColors.grey400,
-                      size: 20,
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        if (showDivider)
-          Divider(color: AppColors.grey200, height: 1, indent: 56),
-      ],
-    );
-  }
-
   Widget _buildLogoutButton() {
     return GradientButton(
       text: 'Logout',
       icon: Icons.logout_rounded,
       onPressed: () async {
         await ref.read(authControllerProvider.notifier).logout();
-        if (context.mounted) {
-          context.go('/login');
-        }
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Logged out successfully!'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        // Navigation handled by GoRouter redirect
       },
       gradient: LinearGradient(
         colors: [Colors.red.shade400, Colors.red.shade600],

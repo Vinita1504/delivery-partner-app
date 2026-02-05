@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/usecases/get_current_user_usecase.dart';
@@ -41,21 +43,28 @@ class AuthController extends StateNotifier<AuthState> {
 
   /// Login with email and password
   Future<bool> login(String email, String password) async {
+    log('[AUTH_CONTROLLER] Starting login...');
     state = state.copyWith(isLoading: true, clearError: true);
+    log('[AUTH_CONTROLLER] State set to loading, calling use case...');
 
     final result = await _loginUseCase(email, password);
+    log('[AUTH_CONTROLLER] Got result from use case');
 
     return result.fold(
       (failure) {
+        log('[AUTH_CONTROLLER] Login FAILED: ${failure.message}');
         state = state.copyWith(isLoading: false, errorMessage: failure.message);
         return false;
       },
       (agent) {
+        log('[AUTH_CONTROLLER] Login SUCCESS: ${agent.name}');
+        log('[AUTH_CONTROLLER] Setting authenticated state...');
         state = state.copyWith(
           isLoading: false,
           isAuthenticated: true,
           agent: agent,
         );
+        log('[AUTH_CONTROLLER] State updated, returning true');
         return true;
       },
     );

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:dartz/dartz.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -84,18 +85,37 @@ class AuthRepositoryImpl implements AuthRepository {
     String email,
     String password,
   ) async {
+    log('[AUTH_REPO] Starting login for email: $email');
     try {
       final request = LoginRequestDTO(email: email, password: password);
+      log('[AUTH_REPO] Created request DTO, calling data source...');
       final response = await _authDataSource.loginDeliveryAgent(request);
+      log('[AUTH_REPO] Got response from data source');
+      log('[AUTH_REPO] Token: ${response.token.substring(0, 20)}...');
+      log('[AUTH_REPO] Agent ID: ${response.agent.id}');
+      log('[AUTH_REPO] Agent Name: ${response.agent.name}');
 
       // Save token and agent data
+      log('[AUTH_REPO] Saving token...');
       await saveToken(response.token);
-      await _saveAgent(response.agent);
+      log('[AUTH_REPO] Token saved successfully');
 
-      return Right(response.agent.toEntity());
+      log('[AUTH_REPO] Saving agent data...');
+      await _saveAgent(response.agent);
+      log('[AUTH_REPO] Agent data saved successfully');
+
+      log('[AUTH_REPO] Converting to entity and returning Right...');
+      final entity = response.agent.toEntity();
+      log('[AUTH_REPO] Entity created successfully, returning success');
+      return Right(entity);
     } on ServerException catch (e) {
+      log(
+        '[AUTH_REPO] ServerException: ${e.message}, statusCode: ${e.statusCode}',
+      );
       return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
-    } catch (e) {
+    } catch (e, stackTrace) {
+      log('[AUTH_REPO] Unknown Exception: $e');
+      log('[AUTH_REPO] StackTrace: $stackTrace');
       return Left(UnknownFailure(message: e.toString()));
     }
   }
