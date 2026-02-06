@@ -3,7 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/animation_constants.dart';
-import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/widgets/animated_card.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/enums/enums.dart';
@@ -19,7 +18,6 @@ class OrderHistoryPage extends StatefulWidget {
 
 class _OrderHistoryPageState extends State<OrderHistoryPage>
     with SingleTickerProviderStateMixin {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late TabController _tabController;
 
   final List<String> _filters = ['All', 'Today', 'This Week', 'This Month'];

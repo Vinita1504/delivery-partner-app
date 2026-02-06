@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/animation_constants.dart';
-import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/widgets/shimmer_loader.dart';
 import '../providers/orders_provider.dart';
 import '../widgets/order_card.dart';
@@ -19,8 +18,6 @@ class AssignedOrdersPage extends ConsumerStatefulWidget {
 }
 
 class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   void initState() {
     super.initState();
