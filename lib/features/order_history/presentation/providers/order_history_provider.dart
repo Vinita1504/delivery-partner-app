@@ -1,14 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/network/network_provider.dart';
 import '../../../../core/enums/enums.dart';
-import '../../data/datasources/order_remote_data_source.dart';
-import '../../data/models/order_model.dart';
+import '../../../../core/network/network_provider.dart';
+import '../../../orders/data/datasources/order_remote_data_source.dart';
+import '../../../orders/data/models/order_model.dart';
 
-/// Orders state for managing orders list with pagination
-class OrdersState {
+/// Order history state with filter and pagination
+class OrderHistoryState {
   final List<OrderModel> orders;
+  final OrderHistoryFilter currentFilter;
   final bool isLoading;
   final bool isLoadingMore;
   final bool isRefreshing;
@@ -17,8 +18,9 @@ class OrdersState {
   final int currentPage;
   final int totalPages;
 
-  const OrdersState({
+  const OrderHistoryState({
     this.orders = const [],
+    this.currentFilter = OrderHistoryFilter.all,
     this.isLoading = false,
     this.isLoadingMore = false,
     this.isRefreshing = false,
@@ -28,17 +30,13 @@ class OrdersState {
     this.totalPages = 1,
   });
 
-  /// Check if list is empty and not loading
   bool get isEmpty => orders.isEmpty && !isLoading;
-
-  /// Check if there's an error
   bool get hasError => error != null;
-
-  /// Check if more pages can be loaded
   bool get canLoadMore => !hasReachedEnd && !isLoadingMore && !isLoading;
 
-  OrdersState copyWith({
+  OrderHistoryState copyWith({
     List<OrderModel>? orders,
+    OrderHistoryFilter? currentFilter,
     bool? isLoading,
     bool? isLoadingMore,
     bool? isRefreshing,
@@ -48,8 +46,9 @@ class OrdersState {
     int? currentPage,
     int? totalPages,
   }) {
-    return OrdersState(
+    return OrderHistoryState(
       orders: orders ?? this.orders,
+      currentFilter: currentFilter ?? this.currentFilter,
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isRefreshing: isRefreshing ?? this.isRefreshing,
@@ -61,29 +60,35 @@ class OrdersState {
   }
 }
 
-/// Orders notifier for handling orders logic with API integration
-class OrdersNotifier extends StateNotifier<OrdersState> {
+/// Order history notifier with filter and pagination support
+class OrderHistoryNotifier extends StateNotifier<OrderHistoryState> {
   final OrderRemoteDataSource _dataSource;
   static const int _pageSize = 20;
 
-  OrdersNotifier({required OrderRemoteDataSource dataSource})
+  OrderHistoryNotifier({required OrderRemoteDataSource dataSource})
     : _dataSource = dataSource,
-      super(const OrdersState());
+      super(const OrderHistoryState());
 
-  /// Initial fetch of orders
-  Future<void> fetchOrders() async {
+  /// Fetch order history with current filter
+  Future<void> fetchHistory({OrderHistoryFilter? filter}) async {
     if (state.isLoading) return;
 
-    debugPrint('📦 [OrdersNotifier] Fetching orders...');
+    final newFilter = filter ?? state.currentFilter;
+    debugPrint(
+      '📜 [OrderHistoryNotifier] Fetching history - filter: ${newFilter.value}',
+    );
+
     state = state.copyWith(
       isLoading: true,
       clearError: true,
+      currentFilter: newFilter,
       currentPage: 1,
       hasReachedEnd: false,
     );
 
     try {
-      final response = await _dataSource.getAssignedOrders(
+      final response = await _dataSource.getOrderHistory(
+        filter: newFilter.value,
         page: 1,
         limit: _pageSize,
       );
@@ -96,29 +101,25 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
         hasReachedEnd: !response.data.pagination.hasMorePages,
       );
       debugPrint(
-        '✅ [OrdersNotifier] Fetched ${response.data.orders.length} orders',
+        '✅ [OrderHistoryNotifier] Fetched ${response.data.orders.length} orders',
       );
     } catch (e) {
-      debugPrint('❌ [OrdersNotifier] Error fetching orders: $e');
+      debugPrint('❌ [OrderHistoryNotifier] Error: $e');
       state = state.copyWith(isLoading: false, error: _getErrorMessage(e));
     }
   }
 
   /// Load next page for infinite scroll
   Future<void> loadMore() async {
-    if (!state.canLoadMore) {
-      debugPrint(
-        '⚠️ [OrdersNotifier] Cannot load more - already loading or reached end',
-      );
-      return;
-    }
+    if (!state.canLoadMore) return;
 
     final nextPage = state.currentPage + 1;
-    debugPrint('📦 [OrdersNotifier] Loading more orders - page $nextPage');
+    debugPrint('📜 [OrderHistoryNotifier] Loading more - page $nextPage');
     state = state.copyWith(isLoadingMore: true);
 
     try {
-      final response = await _dataSource.getAssignedOrders(
+      final response = await _dataSource.getOrderHistory(
+        filter: state.currentFilter.value,
         page: nextPage,
         limit: _pageSize,
       );
@@ -131,21 +132,28 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
         hasReachedEnd: !response.data.pagination.hasMorePages,
       );
       debugPrint(
-        '✅ [OrdersNotifier] Loaded ${response.data.orders.length} more orders',
+        '✅ [OrderHistoryNotifier] Loaded ${response.data.orders.length} more',
       );
     } catch (e) {
-      debugPrint('❌ [OrdersNotifier] Error loading more: $e');
+      debugPrint('❌ [OrderHistoryNotifier] Error loading more: $e');
       state = state.copyWith(isLoadingMore: false, error: _getErrorMessage(e));
     }
   }
 
+  /// Change filter and refresh
+  Future<void> changeFilter(OrderHistoryFilter filter) async {
+    if (filter == state.currentFilter && state.orders.isNotEmpty) return;
+    await fetchHistory(filter: filter);
+  }
+
   /// Pull-to-refresh
   Future<void> refresh() async {
-    debugPrint('🔄 [OrdersNotifier] Refreshing orders...');
+    debugPrint('🔄 [OrderHistoryNotifier] Refreshing...');
     state = state.copyWith(isRefreshing: true);
 
     try {
-      final response = await _dataSource.getAssignedOrders(
+      final response = await _dataSource.getOrderHistory(
+        filter: state.currentFilter.value,
         page: 1,
         limit: _pageSize,
       );
@@ -158,69 +166,13 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
         hasReachedEnd: !response.data.pagination.hasMorePages,
         clearError: true,
       );
-      debugPrint('✅ [OrdersNotifier] Refresh complete');
+      debugPrint('✅ [OrderHistoryNotifier] Refresh complete');
     } catch (e) {
-      debugPrint('❌ [OrdersNotifier] Error refreshing: $e');
+      debugPrint('❌ [OrderHistoryNotifier] Error refreshing: $e');
       state = state.copyWith(isRefreshing: false, error: _getErrorMessage(e));
     }
   }
 
-  /// Get order by ID
-  OrderModel? getOrderById(String id) {
-    try {
-      return state.orders.firstWhere((order) => order.id == id);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Update order status optimistically
-  Future<bool> updateOrderStatus(String orderId, OrderStatus newStatus) async {
-    debugPrint(
-      '🔄 [OrdersNotifier] Updating order $orderId to ${newStatus.displayName}',
-    );
-
-    // Store previous state for rollback
-    final previousOrders = state.orders;
-
-    // Optimistic update
-    final updatedOrders = state.orders.map((order) {
-      if (order.id == orderId) {
-        return order.copyWith(orderStatus: newStatus.value);
-      }
-      return order;
-    }).toList();
-
-    state = state.copyWith(orders: updatedOrders);
-
-    try {
-      switch (newStatus) {
-        case OrderStatus.pickedUp:
-          await _dataSource.markOrderPickedUp(orderId);
-          break;
-        case OrderStatus.outForDelivery:
-          await _dataSource.markOrderOutForDelivery(orderId);
-          break;
-        case OrderStatus.delivered:
-          await _dataSource.completeDelivery(orderId);
-          break;
-        default:
-          break;
-      }
-      debugPrint('✅ [OrdersNotifier] Order status updated successfully');
-      return true;
-    } catch (e) {
-      debugPrint('❌ [OrdersNotifier] Error updating status, rolling back: $e');
-      // Rollback on failure
-      state = state.copyWith(
-        orders: previousOrders,
-        error: _getErrorMessage(e),
-      );
-      return false;
-    }
-  }
-
-  /// Clear error
   void clearError() {
     state = state.copyWith(clearError: true);
   }
@@ -237,26 +189,15 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
   }
 }
 
-/// Provider for OrderRemoteDataSource
+/// Order history provider with API integration
+final orderHistoryProvider =
+    StateNotifierProvider<OrderHistoryNotifier, OrderHistoryState>((ref) {
+      final dataSource = ref.watch(orderRemoteDataSourceProvider);
+      return OrderHistoryNotifier(dataSource: dataSource);
+    });
+
+/// Provider for OrderRemoteDataSource (import from orders_provider)
 final orderRemoteDataSourceProvider = Provider<OrderRemoteDataSource>((ref) {
   final dioClient = ref.watch(dioClientProvider);
   return OrderRemoteDataSourceImpl(dioClient: dioClient);
-});
-
-/// Orders provider with API integration
-final ordersProvider = StateNotifierProvider<OrdersNotifier, OrdersState>((
-  ref,
-) {
-  final dataSource = ref.watch(orderRemoteDataSourceProvider);
-  return OrdersNotifier(dataSource: dataSource);
-});
-
-/// Single order provider for order details
-final orderByIdProvider = Provider.family<OrderModel?, String>((ref, orderId) {
-  final ordersState = ref.watch(ordersProvider);
-  try {
-    return ordersState.orders.firstWhere((order) => order.id == orderId);
-  } catch (_) {
-    return null;
-  }
 });

@@ -18,12 +18,28 @@ class AssignedOrdersPage extends ConsumerStatefulWidget {
 }
 
 class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     Future.microtask(() {
-      ref.read(ordersProvider.notifier).loadOrders();
+      ref.read(ordersProvider.notifier).fetchOrders();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(ordersProvider.notifier).loadMore();
+    }
   }
 
   @override
@@ -36,20 +52,32 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => ref.read(ordersProvider.notifier).refreshOrders(),
+            onPressed: () => ref.read(ordersProvider.notifier).refresh(),
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(ordersProvider.notifier).refreshOrders(),
+        onRefresh: () => ref.read(ordersProvider.notifier).refresh(),
         color: AppColors.primary,
-        child: ordersState.isLoading
-            ? _buildLoadingState()
-            : ordersState.orders.isEmpty
-            ? _buildEmptyState()
-            : _buildOrdersList(ordersState),
+        child: _buildBody(ordersState),
       ),
     );
+  }
+
+  Widget _buildBody(OrdersState ordersState) {
+    if (ordersState.isLoading) {
+      return _buildLoadingState();
+    }
+
+    if (ordersState.hasError) {
+      return _buildErrorState(ordersState.error!);
+    }
+
+    if (ordersState.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return _buildOrdersList(ordersState);
   }
 
   Widget _buildLoadingState() {
@@ -57,6 +85,38 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
       padding: const EdgeInsets.all(16),
       itemCount: 5,
       itemBuilder: (context, index) => const OrderCardSkeleton(),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+              const SizedBox(height: 16),
+              Text(
+                error,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () =>
+                    ref.read(ordersProvider.notifier).fetchOrders(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -118,9 +178,19 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
 
   Widget _buildOrdersList(OrdersState ordersState) {
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: ordersState.orders.length,
+      itemCount:
+          ordersState.orders.length + (ordersState.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index >= ordersState.orders.length) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
         final order = ordersState.orders[index];
         return OrderCard(
           order: order,

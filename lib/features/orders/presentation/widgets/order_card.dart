@@ -47,7 +47,7 @@ class OrderCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    '#${order.id}',
+                    '#${order.orderNumber}',
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
@@ -71,7 +71,7 @@ class OrderCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  order.customerName,
+                  order.customerDisplayName,
                   style: AppTextStyles.bodyMedium.copyWith(
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
@@ -95,7 +95,7 @@ class OrderCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  order.areaName,
+                  order.deliveryAddress?.city ?? 'Address not available',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -126,7 +126,7 @@ class OrderCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    order.amount.toStringAsFixed(0),
+                    order.totalAmount.toStringAsFixed(0),
                     style: AppTextStyles.heading4.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.bold,
@@ -161,6 +161,15 @@ class OrderCard extends StatelessWidget {
 
   Widget _buildStatusBadge(OrderStatus status) {
     switch (status) {
+      case OrderStatus.pending:
+      case OrderStatus.confirmed:
+      case OrderStatus.processing:
+      case OrderStatus.packed:
+        return StatusBadge(
+          label: status.displayName,
+          color: AppColors.warning,
+          icon: Icons.hourglass_empty_rounded,
+        );
       case OrderStatus.assigned:
         return StatusBadge.assigned();
       case OrderStatus.pickedUp:
@@ -174,6 +183,12 @@ class OrderCard extends StatelessWidget {
           label: 'Cancelled',
           color: AppColors.error,
           icon: Icons.cancel_rounded,
+        );
+      case OrderStatus.returned:
+        return StatusBadge(
+          label: 'Returned',
+          color: AppColors.warning,
+          icon: Icons.keyboard_return_rounded,
         );
     }
   }

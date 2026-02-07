@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -9,125 +10,74 @@ import '../../../../core/widgets/animated_card.dart';
 import '../../../../core/enums/enums.dart';
 import '../../data/models/order_model.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../providers/order_detail_provider.dart';
 
 /// Order details page - Show all info required to complete one order
-class OrderDetailsPage extends StatefulWidget {
+class OrderDetailsPage extends ConsumerWidget {
   final String orderId;
 
   const OrderDetailsPage({super.key, required this.orderId});
 
   @override
-  State<OrderDetailsPage> createState() => _OrderDetailsPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(orderDetailProvider(orderId));
 
-class _OrderDetailsPageState extends State<OrderDetailsPage> {
-  OrderModel? _order;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadOrder();
-  }
-
-  Future<void> _loadOrder() async {
-    // TODO: Replace with actual API call using provider
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    // Mock data for now
-    if (mounted) {
-      setState(() {
-        _order = OrderModel(
-          id: widget.orderId,
-          customerId: 'C001',
-          customerName: 'Rahul Sharma',
-          customerPhone: '9876543210',
-          deliveryAddress: '123, Main Street, Sector 5, Near Park',
-          areaName: 'Green Valley',
-          paymentType: PaymentType.cod,
-          amount: 450,
-          status: OrderStatus.assigned,
-          createdAt: DateTime.now(),
-        );
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _handleAction() async {
-    if (_order == null) return;
-
-    if (_order!.status == OrderStatus.outForDelivery) {
-      if (_order!.isCod) {
-        context.push(
-          '/order/${widget.orderId}/cod',
-          extra: {'amount': _order!.amount},
-        );
-      } else {
-        context.push('/order/${widget.orderId}/otp');
-      }
-    } else {
-      // Simulate status update for other states
-      setState(() => _isLoading = true);
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (mounted && _order != null) {
-        OrderStatus nextStatus;
-        switch (_order!.status) {
-          case OrderStatus.assigned:
-            nextStatus = OrderStatus.pickedUp;
-            break;
-          case OrderStatus.pickedUp:
-            nextStatus = OrderStatus.outForDelivery;
-            break;
-          default:
-            nextStatus = _order!.status;
-        }
-
-        setState(() {
-          _order = _order!.copyWith(status: nextStatus);
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _callCustomer() async {
-    final uri = Uri.parse('tel:${_order?.customerPhone}');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading && _order == null) {
+    if (state.isLoading && !state.hasData) {
       return Scaffold(
-        appBar: AppBar(title: Text('Order #${widget.orderId}')),
+        appBar: AppBar(title: Text('Order #$orderId')),
         body: const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
       );
     }
 
-    if (_order == null) {
+    if (state.hasError) {
       return Scaffold(
-        appBar: AppBar(title: Text('Order #${widget.orderId}')),
+        appBar: AppBar(title: Text('Order #$orderId')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: 16),
+              Text(
+                state.error!,
+                style: AppTextStyles.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref
+                    .read(orderDetailProvider(orderId).notifier)
+                    .fetchOrderDetails(orderId),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (!state.hasData) {
+      return Scaffold(
+        appBar: AppBar(title: Text('Order #$orderId')),
         body: const Center(child: Text('Order not found')),
       );
     }
 
+    final order = state.order!;
+
     return Scaffold(
       backgroundColor: AppColors.grey50,
       appBar: AppBar(
-        title: Text('Order #${_order!.id}'),
+        title: Text('Order #${order.orderNumber}'),
         backgroundColor: AppColors.white,
         surfaceTintColor: Colors.transparent,
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline_rounded),
             onPressed: () =>
-                context.push('/help', extra: {'orderId': _order!.id}),
+                context.push('/help', extra: {'orderId': order.id}),
           ),
         ],
       ),
@@ -140,11 +90,11 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Timeline
-                  _buildOrderTimeline(),
+                  _buildOrderTimeline(order),
                   const SizedBox(height: 20),
 
                   // Map Placeholder
-                  _buildMapPlaceholder(),
+                  _buildMapPlaceholder(order),
                   const SizedBox(height: 20),
 
                   // Customer info
@@ -158,15 +108,16 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                     child: Column(
                       children: [
                         _buildInfoRow(
+                          context,
                           Icons.person_rounded,
-                          _order!.customerName,
+                          order.customerDisplayName,
                           'Customer Name',
                           trailing: IconButton(
                             icon: const Icon(
                               Icons.phone_rounded,
                               color: AppColors.primary,
                             ),
-                            onPressed: _callCustomer,
+                            onPressed: () => _callCustomer(order.customerPhone),
                             style: IconButton.styleFrom(
                               backgroundColor: AppColors.primary.withValues(
                                 alpha: 0.1,
@@ -176,15 +127,67 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         ),
                         const Divider(height: 24),
                         _buildInfoRow(
+                          context,
                           Icons.location_on_rounded,
-                          _order!.areaName,
-                          _order!.deliveryAddress,
+                          order.deliveryAddress?.city ?? 'Unknown Area',
+                          order.deliveryAddress?.fullAddress ??
+                              'Address not available',
                         ),
                       ],
                     ),
                   ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
 
                   const SizedBox(height: 20),
+
+                  // Order items (if available)
+                  if (order.orderItems.isNotEmpty) ...[
+                    Text(
+                      'Order Items',
+                      style: AppTextStyles.labelLarge,
+                    ).animate().fadeIn(delay: 250.ms),
+                    const SizedBox(height: 8),
+                    AnimatedCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          ...order.orderItems.map(
+                            (item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.productName,
+                                          style: AppTextStyles.bodyMedium,
+                                        ),
+                                        Text(
+                                          item.formattedQuantity,
+                                          style: AppTextStyles.caption.copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    '₹${item.totalPrice.toStringAsFixed(0)}',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1),
+                    const SizedBox(height: 20),
+                  ],
 
                   // Payment info
                   Text(
@@ -207,14 +210,14 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                   style: AppTextStyles.caption,
                                 ),
                                 Text(
-                                  '₹${_order!.amount.toStringAsFixed(0)}',
+                                  order.formattedAmount,
                                   style: AppTextStyles.heading2.copyWith(
                                     color: AppColors.primary,
                                   ),
                                 ),
                               ],
                             ),
-                            PaymentBadge(isCod: _order!.isCod),
+                            PaymentBadge(isCod: order.isCod),
                           ],
                         ),
                       ],
@@ -228,15 +231,21 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
           ),
         ],
       ),
-      bottomSheet: !_order!.isDelivered ? _buildBottomAction() : null,
+      bottomSheet: !order.isDelivered
+          ? _buildBottomAction(context, ref, order, state.isUpdating)
+          : null,
     );
   }
 
-  Widget _buildOrderTimeline() {
-    final steps = OrderStatus.values
-        .where((s) => s != OrderStatus.cancelled)
-        .toList();
-    final currentStepIndex = steps.indexOf(_order!.status);
+  Widget _buildOrderTimeline(OrderModel order) {
+    final steps = [
+      OrderStatus.assigned,
+      OrderStatus.pickedUp,
+      OrderStatus.outForDelivery,
+      OrderStatus.delivered,
+    ];
+    final currentStepIndex = steps.indexWhere((s) => s == order.status);
+    final actualIndex = currentStepIndex >= 0 ? currentStepIndex : 0;
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
@@ -248,8 +257,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: List.generate(steps.length, (index) {
-          final isCompleted = index <= currentStepIndex;
-          final isCurrent = index == currentStepIndex;
+          final isCompleted = index <= actualIndex;
+          final isCurrent = index == actualIndex;
 
           return Expanded(
             child: Column(
@@ -261,7 +270,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         height: 2,
                         color: index == 0
                             ? Colors.transparent
-                            : (index <= currentStepIndex
+                            : (index <= actualIndex
                                   ? AppColors.primary
                                   : AppColors.grey200),
                       ),
@@ -294,7 +303,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                         height: 2,
                         color: index == steps.length - 1
                             ? Colors.transparent
-                            : (index < currentStepIndex
+                            : (index < actualIndex
                                   ? AppColors.primary
                                   : AppColors.grey200),
                       ),
@@ -319,39 +328,45 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     ).animate().fadeIn().slideY(begin: -0.1);
   }
 
-  Widget _buildMapPlaceholder() {
-    return Container(
-      height: 120,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
-        image: const DecorationImage(
-          image: AssetImage('assets/images/app_logo.png'), // Placeholder
-          opacity: 0.1,
-          fit: BoxFit.contain,
+  Widget _buildMapPlaceholder(OrderModel order) {
+    return GestureDetector(
+      onTap: () async {
+        if (order.deliveryAddress?.hasCoordinates == true) {
+          final uri = Uri.parse(order.deliveryAddress!.mapsUrl);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri);
+          }
+        }
+      },
+      child: Container(
+        height: 120,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
         ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.map_rounded, color: AppColors.primary, size: 32),
-            const SizedBox(height: 8),
-            Text(
-              'Navigate to Location',
-              style: AppTextStyles.labelLarge.copyWith(
-                color: AppColors.primary,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.map_rounded, color: AppColors.primary, size: 32),
+              const SizedBox(height: 8),
+              Text(
+                'Navigate to Location',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.primary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ).animate().fadeIn(delay: 100.ms);
   }
 
   Widget _buildInfoRow(
+    BuildContext context,
     IconData icon,
     String title,
     String subtitle, {
@@ -389,7 +404,12 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 
-  Widget _buildBottomAction() {
+  Widget _buildBottomAction(
+    BuildContext context,
+    WidgetRef ref,
+    OrderModel order,
+    bool isLoading,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -405,10 +425,10 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       ),
       child: SafeArea(
         child: GradientButton(
-          text: _order!.nextActionText,
-          icon: _getActionIcon(),
-          onPressed: _handleAction,
-          isLoading: _isLoading,
+          text: order.nextActionText,
+          icon: _getActionIcon(order.status),
+          onPressed: () => _handleAction(context, ref, order),
+          isLoading: isLoading,
         ),
       ),
     ).animate().slideY(
@@ -418,8 +438,39 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 
-  IconData _getActionIcon() {
-    switch (_order!.status) {
+  Future<void> _handleAction(
+    BuildContext context,
+    WidgetRef ref,
+    OrderModel order,
+  ) async {
+    final notifier = ref.read(orderDetailProvider(orderId).notifier);
+
+    if (order.status == OrderStatus.outForDelivery) {
+      if (order.isCod) {
+        context.push(
+          '/order/$orderId/cod',
+          extra: {'amount': order.totalAmount},
+        );
+      } else {
+        context.push('/order/$orderId/otp');
+      }
+    } else if (order.status == OrderStatus.assigned) {
+      await notifier.markAsPickedUp();
+    } else if (order.status == OrderStatus.pickedUp) {
+      await notifier.markAsOutForDelivery();
+    }
+  }
+
+  Future<void> _callCustomer(String phone) async {
+    if (phone.isEmpty) return;
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  IconData _getActionIcon(OrderStatus status) {
+    switch (status) {
       case OrderStatus.assigned:
         return Icons.inventory_rounded;
       case OrderStatus.pickedUp:

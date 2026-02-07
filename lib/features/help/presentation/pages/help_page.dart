@@ -21,7 +21,7 @@ class _HelpPageState extends State<HelpPage> {
   IssueType? _selectedIssue;
   final _descriptionController = TextEditingController();
   bool _isLoading = false;
-   
+
   @override
   void dispose() {
     _descriptionController.dispose();
@@ -302,6 +302,12 @@ class _HelpPageState extends State<HelpPage> {
         return Icons.sms_failed_outlined;
       case IssueType.addressIssue:
         return Icons.location_off_outlined;
+      case IssueType.paymentIssue:
+        return Icons.payment_outlined;
+      case IssueType.productDamaged:
+        return Icons.broken_image_outlined;
+      case IssueType.customerRefused:
+        return Icons.block_outlined;
       case IssueType.other:
         return Icons.help_outline_rounded;
     }

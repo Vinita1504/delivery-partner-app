@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/animation_constants.dart';
@@ -7,115 +8,119 @@ import '../../../../core/widgets/animated_card.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/enums/enums.dart';
 import '../../../orders/data/models/order_model.dart';
+import '../providers/order_history_provider.dart';
 
-/// Order History page - Shows all delivered orders
-class OrderHistoryPage extends StatefulWidget {
+/// Order History page - Shows all delivered/completed orders
+class OrderHistoryPage extends ConsumerStatefulWidget {
   const OrderHistoryPage({super.key});
 
   @override
-  State<OrderHistoryPage> createState() => _OrderHistoryPageState();
+  ConsumerState<OrderHistoryPage> createState() => _OrderHistoryPageState();
 }
 
-class _OrderHistoryPageState extends State<OrderHistoryPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  final List<String> _filters = ['All', 'Today', 'This Week', 'This Month'];
-
-  // Mock data - Replace with actual provider
-  final List<OrderModel> _deliveredOrders = [
-    OrderModel(
-      id: 'ORD-1001',
-      customerId: 'C001',
-      customerName: 'Amit Kumar',
-      customerPhone: '9876543210',
-      deliveryAddress: '123, Main Street, Sector 5',
-      areaName: 'Green Valley',
-      paymentType: PaymentType.cod,
-      amount: 450,
-      status: OrderStatus.delivered,
-      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-    ),
-    OrderModel(
-      id: 'ORD-1000',
-      customerId: 'C002',
-      customerName: 'Priya Sharma',
-      customerPhone: '9876543211',
-      deliveryAddress: '456, Park Road, Block B',
-      areaName: 'Sunrise Colony',
-      paymentType: PaymentType.prepaid,
-      amount: 680,
-      status: OrderStatus.delivered,
-      createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-    ),
-    OrderModel(
-      id: 'ORD-999',
-      customerId: 'C003',
-      customerName: 'Rahul Verma',
-      customerPhone: '9876543212',
-      deliveryAddress: '789, Lake View',
-      areaName: 'Central Market',
-      paymentType: PaymentType.cod,
-      amount: 320,
-      status: OrderStatus.delivered,
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-    OrderModel(
-      id: 'ORD-998',
-      customerId: 'C004',
-      customerName: 'Sneha Patel',
-      customerPhone: '9876543213',
-      deliveryAddress: '234, MG Road',
-      areaName: 'Central Market',
-      paymentType: PaymentType.prepaid,
-      amount: 1150,
-      status: OrderStatus.delivered,
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-  ];
+class _OrderHistoryPageState extends ConsumerState<OrderHistoryPage> {
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _filters.length, vsync: this);
+    _scrollController.addListener(_onScroll);
+    // Fetch initial data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(orderHistoryProvider.notifier).fetchHistory();
+    });
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(orderHistoryProvider.notifier).loadMore();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final historyState = ref.watch(orderHistoryProvider);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Order History'),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: _filters.map((f) => Tab(text: f)).toList(),
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: _filters.map((_) => _buildOrdersList()).toList(),
+      appBar: AppBar(title: const Text('Order History')),
+      body: Column(
+        children: [
+          // Filter chips
+          _buildFilterChips(historyState.currentFilter),
+          const SizedBox(height: 8),
+          // Orders list
+          Expanded(child: _buildBody(historyState)),
+        ],
       ),
     );
   }
 
-  Widget _buildOrdersList() {
-    if (_deliveredOrders.isEmpty) {
+  Widget _buildFilterChips(OrderHistoryFilter currentFilter) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: OrderHistoryFilter.values.map((filter) {
+          final isSelected = filter == currentFilter;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(filter.displayName),
+              selected: isSelected,
+              onSelected: (_) {
+                ref.read(orderHistoryProvider.notifier).changeFilter(filter);
+              },
+              backgroundColor: AppColors.grey100,
+              selectedColor: AppColors.primarySurface,
+              labelStyle: AppTextStyles.labelMedium.copyWith(
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildBody(OrderHistoryState state) {
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.hasError) {
+      return _buildErrorState(state.error!);
+    }
+
+    if (state.isEmpty) {
       return _buildEmptyState();
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _deliveredOrders.length,
-      itemBuilder: (context, index) {
-        final order = _deliveredOrders[index];
-        return _buildHistoryCard(order, index);
-      },
+    return RefreshIndicator(
+      onRefresh: () => ref.read(orderHistoryProvider.notifier).refresh(),
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(16),
+        itemCount: state.orders.length + (state.isLoadingMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index >= state.orders.length) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          final order = state.orders[index];
+          return _buildHistoryCard(order, index);
+        },
+      ),
     );
   }
 
@@ -134,20 +139,20 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.statusDelivered.withValues(
-                            alpha: 0.1,
-                          ),
+                          color: _getStatusColor(
+                            order.status,
+                          ).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
-                          Icons.check_circle_rounded,
+                        child: Icon(
+                          _getStatusIcon(order.status),
                           size: 18,
-                          color: AppColors.statusDelivered,
+                          color: _getStatusColor(order.status),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        '#${order.id}',
+                        '#${order.orderNumber}',
                         style: AppTextStyles.labelLarge.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -168,12 +173,12 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      order.customerName,
+                      order.customerDisplayName,
                       style: AppTextStyles.bodyMedium,
                     ),
                   ),
                   Text(
-                    '₹${order.amount.toStringAsFixed(0)}',
+                    order.formattedAmount,
                     style: AppTextStyles.heading4.copyWith(
                       color: AppColors.primary,
                     ),
@@ -182,16 +187,26 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
               ),
               const SizedBox(height: 6),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(
-                    Icons.access_time_rounded,
-                    size: 16,
-                    color: AppColors.grey500,
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.access_time_rounded,
+                        size: 16,
+                        color: AppColors.grey500,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatTime(order.createdAt),
+                        style: AppTextStyles.caption,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _formatTime(order.createdAt),
-                    style: AppTextStyles.caption,
+                  StatusBadge(
+                    label: order.status.displayName,
+                    color: _getStatusColor(order.status),
+                    icon: _getStatusIcon(order.status),
                   ),
                 ],
               ),
@@ -205,6 +220,32 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
           delay: Duration(milliseconds: 50 * index),
           duration: AnimationConstants.normal,
         );
+  }
+
+  Color _getStatusColor(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.delivered:
+        return AppColors.statusDelivered;
+      case OrderStatus.cancelled:
+        return AppColors.error;
+      case OrderStatus.returned:
+        return AppColors.warning;
+      default:
+        return AppColors.grey500;
+    }
+  }
+
+  IconData _getStatusIcon(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.delivered:
+        return Icons.check_circle_rounded;
+      case OrderStatus.cancelled:
+        return Icons.cancel_rounded;
+      case OrderStatus.returned:
+        return Icons.keyboard_return_rounded;
+      default:
+        return Icons.circle_rounded;
+    }
   }
 
   Widget _buildEmptyState() {
@@ -241,6 +282,29 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
     );
   }
 
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+          const SizedBox(height: 16),
+          Text(
+            error,
+            style: AppTextStyles.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () =>
+                ref.read(orderHistoryProvider.notifier).fetchHistory(),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showOrderDetails(OrderModel order) {
     showModalBottomSheet(
       context: context,
@@ -270,31 +334,38 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Order #${order.id}', style: AppTextStyles.heading3),
-                StatusBadge.delivered(),
+                Text(
+                  'Order #${order.orderNumber}',
+                  style: AppTextStyles.heading3,
+                ),
+                StatusBadge(
+                  label: order.status.displayName,
+                  color: _getStatusColor(order.status),
+                  icon: _getStatusIcon(order.status),
+                ),
               ],
             ),
             const SizedBox(height: 20),
             _buildDetailRow(
               Icons.person_rounded,
               'Customer',
-              order.customerName,
+              order.customerDisplayName,
             ),
             _buildDetailRow(Icons.phone_rounded, 'Phone', order.customerPhone),
             _buildDetailRow(
               Icons.location_on_rounded,
               'Address',
-              order.deliveryAddress,
+              order.deliveryAddress?.fullAddress ?? 'Not available',
             ),
             _buildDetailRow(
               Icons.currency_rupee_rounded,
               'Amount',
-              '₹${order.amount.toStringAsFixed(0)}',
+              order.formattedAmount,
             ),
             _buildDetailRow(
               Icons.payment_rounded,
               'Payment',
-              order.paymentType.displayName,
+              order.paymentMethodEnum.displayName,
             ),
             const SizedBox(height: 20),
           ],
