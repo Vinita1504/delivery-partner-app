@@ -111,19 +111,23 @@ class OrderDetailsPage extends ConsumerWidget {
                           context,
                           Icons.person_rounded,
                           order.customerDisplayName,
-                          'Customer Name',
-                          trailing: IconButton(
-                            icon: const Icon(
-                              Icons.phone_rounded,
-                              color: AppColors.primary,
-                            ),
-                            onPressed: () => _callCustomer(order.customerPhone),
-                            style: IconButton.styleFrom(
-                              backgroundColor: AppColors.primary.withValues(
-                                alpha: 0.1,
-                              ),
-                            ),
-                          ),
+                          order.customerPhone.isNotEmpty
+                              ? order.customerPhone
+                              : 'No phone available',
+                          trailing: order.customerPhone.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(
+                                    Icons.phone_rounded,
+                                    color: AppColors.primary,
+                                  ),
+                                  onPressed: () =>
+                                      _callCustomer(order.customerPhone),
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: AppColors.primary
+                                        .withValues(alpha: 0.1),
+                                  ),
+                                )
+                              : null,
                         ),
                         const Divider(height: 24),
                         _buildInfoRow(
@@ -142,7 +146,7 @@ class OrderDetailsPage extends ConsumerWidget {
                   // Order items (if available)
                   if (order.orderItems.isNotEmpty) ...[
                     Text(
-                      'Order Items',
+                      'Order Items (${order.totalItemsCount})',
                       style: AppTextStyles.labelLarge,
                     ).animate().fadeIn(delay: 250.ms),
                     const SizedBox(height: 8),
@@ -150,48 +154,125 @@ class OrderDetailsPage extends ConsumerWidget {
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         children: [
-                          ...order.orderItems.map(
-                            (item) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item.productName,
-                                          style: AppTextStyles.bodyMedium,
-                                        ),
-                                        Text(
-                                          item.formattedQuantity,
-                                          style: AppTextStyles.caption.copyWith(
-                                            color: AppColors.textSecondary,
+                          ...order.orderItems.asMap().entries.map((entry) {
+                            final item = entry.value;
+                            final isLast =
+                                entry.key == order.orderItems.length - 1;
+                            return Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    // Product image
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: item.hasImage
+                                          ? Image.network(
+                                              item.productImage!,
+                                              width: 56,
+                                              height: 56,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (
+                                                    context,
+                                                    error,
+                                                    stackTrace,
+                                                  ) => _buildImagePlaceholder(),
+                                            )
+                                          : _buildImagePlaceholder(),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item.productName,
+                                            style: AppTextStyles.bodyMedium,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${item.quantity} x ₹${item.price.toStringAsFixed(0)}',
+                                            style: AppTextStyles.caption
+                                                .copyWith(
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    '₹${item.totalPrice.toStringAsFixed(0)}',
-                                    style: AppTextStyles.bodyMedium.copyWith(
-                                      fontWeight: FontWeight.bold,
+                                    Text(
+                                      '₹${item.totalPrice.toStringAsFixed(0)}',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                                  ],
+                                ),
+                                if (!isLast) const Divider(height: 20),
+                              ],
+                            );
+                          }),
                         ],
                       ),
                     ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.1),
                     const SizedBox(height: 20),
                   ],
 
-                  // Payment info
+                  // Delivery Slot (if available)
+                  if (order.deliverySlot != null) ...[
+                    Text(
+                      'Delivery Slot',
+                      style: AppTextStyles.labelLarge,
+                    ).animate().fadeIn(delay: 280.ms),
+                    const SizedBox(height: 8),
+                    AnimatedCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.grey100,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.schedule_rounded,
+                              color: AppColors.grey600,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  order.deliverySlot!.name ?? 'Delivery Slot',
+                                  style: AppTextStyles.bodyLarge,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  order.deliverySlot!.displayString,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn(delay: 280.ms).slideY(begin: 0.1),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // Order Summary
                   Text(
-                    'Payment Details',
+                    'Order Summary',
                     style: AppTextStyles.labelLarge,
                   ).animate().fadeIn(delay: 300.ms),
                   const SizedBox(height: 8),
@@ -199,26 +280,54 @@ class OrderDetailsPage extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
+                        _buildSummaryRow(
+                          'Item Total',
+                          '₹${order.totalAmount.toStringAsFixed(2)}',
+                        ),
+                        if (order.hasDiscount) ...[
+                          const SizedBox(height: 8),
+                          _buildSummaryRow(
+                            'Discount',
+                            '- ₹${order.discount.toStringAsFixed(2)}',
+                            valueColor: AppColors.success,
+                          ),
+                        ],
+                        if (order.hasDeliveryFee) ...[
+                          const SizedBox(height: 8),
+                          _buildSummaryRow(
+                            'Delivery Fee',
+                            '₹${order.deliveryFee.toStringAsFixed(2)}',
+                          ),
+                        ],
+                        if (order.hasTax) ...[
+                          const SizedBox(height: 8),
+                          _buildSummaryRow(
+                            'Tax',
+                            '₹${order.taxAmount.toStringAsFixed(2)}',
+                          ),
+                        ],
+                        const Divider(height: 24),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Total Amount',
-                                  style: AppTextStyles.caption,
-                                ),
-                                Text(
-                                  order.formattedAmount,
-                                  style: AppTextStyles.heading2.copyWith(
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              'Final Amount',
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            PaymentBadge(isCod: order.isCod),
+                            Text(
+                              order.formattedFinalAmount,
+                              style: AppTextStyles.heading2.copyWith(
+                                color: AppColors.primary,
+                              ),
+                            ),
                           ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [PaymentBadge(isCod: order.isCod)],
                         ),
                       ],
                     ),
@@ -399,7 +508,46 @@ class OrderDetailsPage extends ConsumerWidget {
             ],
           ),
         ),
-        if (trailing != null) trailing,
+        ?trailing,
+      ],
+    );
+  }
+
+  /// Build placeholder widget for product images
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: AppColors.grey100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Icon(
+        Icons.image_rounded,
+        color: AppColors.grey400,
+        size: 24,
+      ),
+    );
+  }
+
+  /// Build a row for order summary (label + value)
+  Widget _buildSummaryRow(String label, String value, {Color? valueColor}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        Text(
+          value,
+          style: AppTextStyles.bodyMedium.copyWith(
+            fontWeight: FontWeight.w500,
+            color: valueColor,
+          ),
+        ),
       ],
     );
   }
@@ -446,10 +594,15 @@ class OrderDetailsPage extends ConsumerWidget {
     final notifier = ref.read(orderDetailProvider(orderId).notifier);
 
     if (order.status == OrderStatus.outForDelivery) {
+      // Already out for delivery - navigate to completion page
       if (order.isCod) {
         context.push(
           '/order/$orderId/cod',
-          extra: {'amount': order.totalAmount},
+          extra: {
+            'amount': order.finalAmount > 0
+                ? order.finalAmount
+                : order.totalAmount,
+          },
         );
       } else {
         context.push('/order/$orderId/otp');
@@ -457,7 +610,27 @@ class OrderDetailsPage extends ConsumerWidget {
     } else if (order.status == OrderStatus.assigned) {
       await notifier.markAsPickedUp();
     } else if (order.status == OrderStatus.pickedUp) {
-      await notifier.markAsOutForDelivery();
+      // Mark out for delivery and get response
+      final response = await notifier.markAsOutForDelivery();
+      if (response != null && context.mounted) {
+        final requiresOtp = response['requiresOtp'] == true;
+        final devOtp = response['devOtp'] as String?;
+
+        if (requiresOtp || order.isPrepaid) {
+          // Navigate to OTP page for prepaid orders
+          context.push('/order/$orderId/otp', extra: {'devOtp': devOtp});
+        } else {
+          // COD order - navigate to cash collection
+          context.push(
+            '/order/$orderId/cod',
+            extra: {
+              'amount': order.finalAmount > 0
+                  ? order.finalAmount
+                  : order.totalAmount,
+            },
+          );
+        }
+      }
     }
   }
 

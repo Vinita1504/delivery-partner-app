@@ -20,15 +20,11 @@ class ApiEndpoints {
       '$deliveryAgent/orders/$id/pickup';
   static String markOrderOutForDelivery(String id) =>
       '$deliveryAgent/orders/$id/out-for-delivery';
+  static String sendOtp(String id) => '$deliveryAgent/orders/$id/send-otp';
+  static String verifyOtpDelivery(String id) =>
+      '$deliveryAgent/orders/$id/verify-otp';
   static String completeDelivery(String id) =>
       '$deliveryAgent/orders/$id/complete';
-
-  // Orders (legacy - for other modules)
-  static const String orders = '/orders';
-  static String orderDetails(String id) => '/orders/$id';
-  static String updateOrderStatus(String id) => '/orders/$id/status';
-  static String verifyOtp(String id) => '/orders/$id/verify-otp';
-  static String resendOtp(String id) => '/orders/$id/resend-otp';
 
   // Issues
   static const String reportIssue = '/issues';

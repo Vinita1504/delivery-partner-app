@@ -6,8 +6,11 @@ part 'delivery_address_model.g.dart';
 @JsonSerializable()
 class DeliveryAddressModel {
   final String id;
+  @JsonKey(name: 'fullName')
   final String name;
+  @JsonKey(name: 'phoneNumber')
   final String phone;
+  @JsonKey(name: 'address')
   final String addressLine1;
   final String? addressLine2;
   final String city;

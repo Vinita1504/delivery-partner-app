@@ -6,12 +6,15 @@ part 'delivery_slot_model.g.dart';
 @JsonSerializable()
 class DeliverySlotModel {
   final String id;
+  final String? name;
   final String startTime;
   final String endTime;
+  @JsonKey(name: 'date')
   final String slotDate;
 
   const DeliverySlotModel({
     required this.id,
+    this.name,
     required this.startTime,
     required this.endTime,
     required this.slotDate,

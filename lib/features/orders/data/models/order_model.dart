@@ -15,9 +15,17 @@ class OrderModel {
   final String orderNumber;
   final String orderStatus;
   final String paymentStatus;
-  @JsonKey(defaultValue: 'cod')
+  @JsonKey(name: 'paymentMethod', defaultValue: 'cod')
   final String paymentMode;
   final double totalAmount;
+  @JsonKey(defaultValue: 0.0)
+  final double discount;
+  @JsonKey(defaultValue: 0.0)
+  final double deliveryFee;
+  @JsonKey(defaultValue: 0.0)
+  final double taxAmount;
+  @JsonKey(defaultValue: 0.0)
+  final double finalAmount;
   final String? customerName;
   final DateTime createdAt;
   final DateTime? assignedAt;
@@ -40,6 +48,10 @@ class OrderModel {
     required this.paymentStatus,
     required this.paymentMode,
     required this.totalAmount,
+    this.discount = 0,
+    this.deliveryFee = 0,
+    this.taxAmount = 0,
+    this.finalAmount = 0,
     this.customerName,
     required this.createdAt,
     this.assignedAt,
@@ -127,6 +139,19 @@ class OrderModel {
   /// Get formatted total amount
   String get formattedAmount => '₹${totalAmount.toStringAsFixed(2)}';
 
+  /// Get formatted final amount
+  String get formattedFinalAmount =>
+      '₹${(finalAmount > 0 ? finalAmount : totalAmount).toStringAsFixed(2)}';
+
+  /// Check if order has discount
+  bool get hasDiscount => discount > 0;
+
+  /// Check if order has delivery fee
+  bool get hasDeliveryFee => deliveryFee > 0;
+
+  /// Check if order has tax
+  bool get hasTax => taxAmount > 0;
+
   /// Get total items count
   int get totalItemsCount =>
       orderItems.fold(0, (sum, item) => sum + item.quantity);
@@ -138,6 +163,10 @@ class OrderModel {
     String? paymentStatus,
     String? paymentMode,
     double? totalAmount,
+    double? discount,
+    double? deliveryFee,
+    double? taxAmount,
+    double? finalAmount,
     String? customerName,
     DateTime? createdAt,
     DateTime? assignedAt,
@@ -158,6 +187,10 @@ class OrderModel {
       paymentStatus: paymentStatus ?? this.paymentStatus,
       paymentMode: paymentMode ?? this.paymentMode,
       totalAmount: totalAmount ?? this.totalAmount,
+      discount: discount ?? this.discount,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      taxAmount: taxAmount ?? this.taxAmount,
+      finalAmount: finalAmount ?? this.finalAmount,
       customerName: customerName ?? this.customerName,
       createdAt: createdAt ?? this.createdAt,
       assignedAt: assignedAt ?? this.assignedAt,

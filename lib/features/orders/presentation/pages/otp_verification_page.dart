@@ -2,34 +2,40 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinput/pinput.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/animation_constants.dart';
 import '../../../../core/widgets/gradient_button.dart';
+import '../providers/order_detail_provider.dart';
 
 /// OTP Verification page with Pinput for prepaid orders
-class OtpVerificationPage extends StatefulWidget {
+class OtpVerificationPage extends ConsumerStatefulWidget {
   final String orderId;
+  final String? devOtp; // For dev mode testing
 
-  const OtpVerificationPage({super.key, required this.orderId});
+  const OtpVerificationPage({super.key, required this.orderId, this.devOtp});
 
   @override
-  State<OtpVerificationPage> createState() => _OtpVerificationPageState();
+  ConsumerState<OtpVerificationPage> createState() =>
+      _OtpVerificationPageState();
 }
 
-class _OtpVerificationPageState extends State<OtpVerificationPage> {
+class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
   final _pinController = TextEditingController();
   final _focusNode = FocusNode();
   bool _isLoading = false;
   bool _canResend = false;
   int _resendSeconds = 60;
   Timer? _timer;
+  String? _devOtp;
 
   @override
   void initState() {
     super.initState();
+    _devOtp = widget.devOtp;
     _startResendTimer();
     // Auto-focus the pin field
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -39,6 +45,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
   void _startResendTimer() {
     _timer?.cancel();
+    _resendSeconds = 60;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_resendSeconds > 0) {
         setState(() => _resendSeconds--);
@@ -67,13 +74,46 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
     setState(() => _isLoading = true);
 
-    // Simulate OTP verification
-    await Future.delayed(const Duration(seconds: 1));
-    HapticFeedback.mediumImpact();
+    final notifier = ref.read(orderDetailProvider(widget.orderId).notifier);
+    final response = await notifier.verifyOtp(_pinController.text);
 
-    if (mounted) {
+    if (!mounted) return;
+
+    if (response != null && response['success'] == true) {
+      // OTP verified - now complete the delivery
+      final completed = await notifier.completeDelivery();
+
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      context.go('/order/${widget.orderId}/success');
+
+      if (completed) {
+        HapticFeedback.mediumImpact();
+        // Delivery completed - navigate to success page
+        context.go('/order/${widget.orderId}/success');
+      } else {
+        // Failed to complete delivery
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'OTP verified but failed to complete delivery. Please try again.',
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } else {
+      // OTP verification failed
+      setState(() => _isLoading = false);
+      HapticFeedback.heavyImpact();
+      _pinController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            response?['message'] ?? 'Invalid OTP. Please try again.',
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -83,20 +123,35 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     HapticFeedback.lightImpact();
     setState(() {
       _canResend = false;
-      _resendSeconds = 60;
     });
 
-    // Simulate OTP resend
-    await Future.delayed(const Duration(seconds: 1));
+    final notifier = ref.read(orderDetailProvider(widget.orderId).notifier);
+    final response = await notifier.sendOtp();
 
-    if (mounted) {
+    if (!mounted) return;
+
+    if (response != null && response['success'] == true) {
+      // Update devOtp if available
+      if (response['devOtp'] != null) {
+        setState(() => _devOtp = response['devOtp'] as String?);
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('OTP sent successfully'),
+          content: Text(response['message'] ?? 'OTP sent successfully'),
           backgroundColor: AppColors.success,
         ),
       );
       _startResendTimer();
+    } else {
+      setState(() => _canResend = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            response?['message'] ?? 'Failed to send OTP. Please try again.',
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -174,6 +229,40 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
               ),
               textAlign: TextAlign.center,
             ),
+            // Show devOtp hint in debug mode
+            if (_devOtp != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Color.fromRGBO(
+                    AppColors.warning.r.toInt(),
+                    AppColors.warning.g.toInt(),
+                    AppColors.warning.b.toInt(),
+                    0.1,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Color.fromRGBO(
+                      AppColors.warning.r.toInt(),
+                      AppColors.warning.g.toInt(),
+                      AppColors.warning.b.toInt(),
+                      0.3,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  'Dev OTP: $_devOtp',
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ],
         )
         .animate()

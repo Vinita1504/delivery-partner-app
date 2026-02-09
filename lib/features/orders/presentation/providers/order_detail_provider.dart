@@ -106,8 +106,9 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
   }
 
   /// Mark order as out for delivery
-  Future<bool> markAsOutForDelivery() async {
-    if (state.order == null || state.isUpdating) return false;
+  /// Returns response with {requiresOtp, otpSent, devOtp} or null on failure
+  Future<Map<String, dynamic>?> markAsOutForDelivery() async {
+    if (state.order == null || state.isUpdating) return null;
 
     debugPrint('🚚 [OrderDetailNotifier] Marking order as out for delivery');
     state = state.copyWith(isUpdating: true, clearUpdateError: true);
@@ -120,10 +121,15 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
     );
 
     try {
-      await _dataSource.markOrderOutForDelivery(previousOrder.id);
+      final response = await _dataSource.markOrderOutForDelivery(
+        previousOrder.id,
+      );
       state = state.copyWith(isUpdating: false);
-      debugPrint('✅ [OrderDetailNotifier] Order marked as out for delivery');
-      return true;
+      debugPrint(
+        '✅ [OrderDetailNotifier] Order marked as out for delivery. '
+        'requiresOtp: ${response['requiresOtp']}',
+      );
+      return response;
     } catch (e) {
       debugPrint('❌ [OrderDetailNotifier] Error: $e');
       state = state.copyWith(
@@ -131,7 +137,55 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
         isUpdating: false,
         updateError: _getErrorMessage(e),
       );
-      return false;
+      return null;
+    }
+  }
+
+  /// Send OTP to customer (resend)
+  /// Returns response with {success, expiresIn, devOtp} or null on failure
+  Future<Map<String, dynamic>?> sendOtp() async {
+    if (state.order == null || state.isUpdating) return null;
+
+    debugPrint('📤 [OrderDetailNotifier] Sending OTP');
+    state = state.copyWith(isUpdating: true, clearUpdateError: true);
+
+    try {
+      final response = await _dataSource.sendOtp(state.order!.id);
+      state = state.copyWith(isUpdating: false);
+      debugPrint('✅ [OrderDetailNotifier] OTP sent');
+      return response;
+    } catch (e) {
+      debugPrint('❌ [OrderDetailNotifier] Error sending OTP: $e');
+      state = state.copyWith(
+        isUpdating: false,
+        updateError: _getErrorMessage(e),
+      );
+      return null;
+    }
+  }
+
+  /// Verify OTP for delivery
+  /// Returns response with {success, message} or null on failure
+  Future<Map<String, dynamic>?> verifyOtp(String otp) async {
+    if (state.order == null || state.isUpdating) return null;
+
+    debugPrint('🔐 [OrderDetailNotifier] Verifying OTP');
+    state = state.copyWith(isUpdating: true, clearUpdateError: true);
+
+    try {
+      final response = await _dataSource.verifyOtp(state.order!.id, otp);
+      state = state.copyWith(isUpdating: false);
+      debugPrint(
+        '✅ [OrderDetailNotifier] OTP verified: ${response['success']}',
+      );
+      return response;
+    } catch (e) {
+      debugPrint('❌ [OrderDetailNotifier] Error verifying OTP: $e');
+      state = state.copyWith(
+        isUpdating: false,
+        updateError: _getErrorMessage(e),
+      );
+      return null;
     }
   }
 
@@ -181,6 +235,9 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
     }
     if (errorStr.contains('otp') || errorStr.contains('invalid')) {
       return 'Invalid OTP. Please try again.';
+    }
+    if (errorStr.contains('expired')) {
+      return 'OTP has expired. Please request a new one.';
     }
     return 'Something went wrong. Please try again.';
   }

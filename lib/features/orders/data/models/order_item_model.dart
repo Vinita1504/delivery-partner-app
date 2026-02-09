@@ -10,6 +10,7 @@ class OrderItemModel {
   final String productName;
   final int quantity;
   final String? unit;
+  @JsonKey(name: 'unitPrice')
   final double price;
   final double totalPrice;
   final String? productImage;

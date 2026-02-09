@@ -9,15 +9,17 @@ part of 'delivery_slot_model.dart';
 DeliverySlotModel _$DeliverySlotModelFromJson(Map<String, dynamic> json) =>
     DeliverySlotModel(
       id: json['id'] as String,
+      name: json['name'] as String?,
       startTime: json['startTime'] as String,
       endTime: json['endTime'] as String,
-      slotDate: json['slotDate'] as String,
+      slotDate: json['date'] as String,
     );
 
 Map<String, dynamic> _$DeliverySlotModelToJson(DeliverySlotModel instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'name': instance.name,
       'startTime': instance.startTime,
       'endTime': instance.endTime,
-      'slotDate': instance.slotDate,
+      'date': instance.slotDate,
     };

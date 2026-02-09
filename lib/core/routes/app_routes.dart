@@ -100,7 +100,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             name: 'otpVerification',
             builder: (context, state) {
               final orderId = state.pathParameters['orderId']!;
-              return OtpVerificationPage(orderId: orderId);
+              final extra = state.extra as Map<String, dynamic>?;
+              final devOtp = extra?['devOtp'] as String?;
+              return OtpVerificationPage(orderId: orderId, devOtp: devOtp);
             },
           ),
           // COD Confirmation (nested under order)
