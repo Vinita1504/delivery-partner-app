@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../providers/order_detail_provider.dart';
 
 /// COD Confirmation page - Confirm cash collection with premium receipt UI
-class CodConfirmationPage extends StatefulWidget {
+class CodConfirmationPage extends ConsumerStatefulWidget {
   final String orderId;
   final double amount;
 
@@ -16,22 +19,34 @@ class CodConfirmationPage extends StatefulWidget {
   });
 
   @override
-  State<CodConfirmationPage> createState() => _CodConfirmationPageState();
+  ConsumerState<CodConfirmationPage> createState() =>
+      _CodConfirmationPageState();
 }
 
-class _CodConfirmationPageState extends State<CodConfirmationPage> {
+class _CodConfirmationPageState extends ConsumerState<CodConfirmationPage> {
   bool _isLoading = false;
   bool _confirmed = false;
 
   Future<void> _confirmCollection() async {
     setState(() => _isLoading = true);
 
-    // TODO: Implement actual COD confirmation
-    await Future.delayed(const Duration(seconds: 1));
+    final notifier = ref.read(orderDetailProvider(widget.orderId).notifier);
+    final completed = await notifier.completeDelivery();
 
-    if (mounted) {
-      setState(() => _isLoading = false);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (completed) {
+      HapticFeedback.mediumImpact();
       context.go('/order/${widget.orderId}/success');
+    } else {
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to complete delivery. Please try again.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -251,7 +266,15 @@ class _CodConfirmationPageState extends State<CodConfirmationPage> {
             color: AppColors.textSecondary,
           ),
         ),
-        Text(value, style: AppTextStyles.heading4.copyWith(fontSize: 16)),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            value,
+            style: AppTextStyles.heading4.copyWith(fontSize: 16),
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+          ),
+        ),
       ],
     );
   }

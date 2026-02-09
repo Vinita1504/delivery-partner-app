@@ -334,10 +334,14 @@ class _OrderHistoryPageState extends ConsumerState<OrderHistoryPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Order #${order.orderNumber}',
-                  style: AppTextStyles.heading3,
+                Flexible(
+                  child: Text(
+                    'Order #${order.orderNumber}',
+                    style: AppTextStyles.heading3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
+                const SizedBox(width: 12),
                 StatusBadge(
                   label: order.status.displayName,
                   color: _getStatusColor(order.status),
@@ -378,16 +382,24 @@ class _OrderHistoryPageState extends ConsumerState<OrderHistoryPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 20, color: AppColors.grey500),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppTextStyles.caption),
-              const SizedBox(height: 2),
-              Text(value, style: AppTextStyles.bodyMedium),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTextStyles.caption),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: AppTextStyles.bodyMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),
