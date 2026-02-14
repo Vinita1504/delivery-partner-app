@@ -69,16 +69,16 @@ class DashboardQuickActions extends StatelessWidget {
                 onTap: () => context.push(AppRoutes.profile),
               ),
             ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: DashboardActionCard(
-                icon: Icons.help_outline_rounded,
-                label: 'Help',
-                subtitle: 'Get support',
-                color: secondaryColor,
-                onTap: () => context.push(AppRoutes.help),
-              ),
-            ),
+            // SizedBox(width: 12.w),
+            // Expanded(
+            //   child: DashboardActionCard(
+            //     icon: Icons.help_outline_rounded,
+            //     label: 'Help',
+            //     subtitle: 'Get support',
+            //     color: secondaryColor,
+            //     onTap: () => context.push(AppRoutes.help),
+            //   ),
+            // ),
           ],
         ),
       ],

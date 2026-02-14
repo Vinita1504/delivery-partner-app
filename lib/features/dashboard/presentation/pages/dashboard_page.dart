@@ -10,7 +10,6 @@ import '../widgets/dashboard_app_bar.dart';
 import '../widgets/dashboard_greeting.dart';
 import '../widgets/dashboard_stats_section.dart';
 import '../widgets/dashboard_quick_actions.dart';
-import '../widgets/dashboard_recent_activity.dart';
 
 /// Dashboard page - Home overview with stats and quick actions
 class DashboardPage extends ConsumerStatefulWidget {
@@ -45,9 +44,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       drawer: const AppDrawer(currentRoute: AppRoutes.dashboard),
       appBar: DashboardAppBar(
         onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        onNotificationPressed: () {
-          // TODO: Handle notification tap
-        },
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(dashboardProvider.notifier).refresh(),
@@ -79,7 +75,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 historyColor: AppColors.grey600,
               ),
               SizedBox(height: 24.h),
-              const DashboardRecentActivity(),
+              // const DashboardRecentActivity(),
             ],
           ),
         ),

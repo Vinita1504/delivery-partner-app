@@ -1,17 +1,14 @@
+import 'package:delivery_partner_app/core/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/extensions/extensions.dart';
 
 /// Dashboard app bar widget
 class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onMenuPressed;
-  final VoidCallback? onNotificationPressed;
 
-  const DashboardAppBar({
-    super.key,
-    required this.onMenuPressed,
-    this.onNotificationPressed,
-  });
+  const DashboardAppBar({super.key, required this.onMenuPressed});
 
   @override
   Size get preferredSize => Size.fromHeight(kToolbarHeight);
@@ -26,7 +23,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         children: [
           Image.asset(
-            'assets/images/app_logo.png',
+            'assets/images/app_logo_splash.png',
             height: 32.h,
             errorBuilder: (context, error, stackTrace) => Icon(
               Icons.local_shipping_rounded,
@@ -34,20 +31,14 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
               color: context.colorScheme.primary,
             ),
           ),
-          SizedBox(width: 8.w),
-          Text(
-            'Dehat Fresh',
-            style: context.textTheme.titleMedium?.copyWith(
-              color: context.colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
         ],
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined),
-          onPressed: onNotificationPressed,
+          icon: const Icon(Icons.person_2_outlined),
+          onPressed: () {
+            context.push(AppRoutes.profile);
+          },
         ),
       ],
     );

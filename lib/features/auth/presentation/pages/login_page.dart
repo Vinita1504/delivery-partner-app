@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/gradient_button.dart';
@@ -136,24 +137,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.primarySurface,
+            // color: AppColors.primarySurface,
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.2),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            // boxShadow: [
+            //   BoxShadow(
+            //     color: AppColors.primary.withValues(alpha: 0.2),
+            //     blurRadius: 24,
+            //     offset: const Offset(0, 8),
+            //   ),
+            // ],
           ),
-          child: Image.asset(
-            'assets/images/app_logo.png',
-            width: 80,
-            height: 80,
-            errorBuilder: (context, error, stackTrace) => const Icon(
-              Icons.local_shipping_rounded,
-              size: 64,
-              color: AppColors.primary,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12.r),
+            child: Image.asset(
+              'assets/images/app_logo.png',
+              width: 100.w,
+              height: 100.w,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.local_shipping_rounded,
+                size: 64,
+                color: AppColors.primary,
+              ),
             ),
           ),
         ),
@@ -165,7 +169,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Column(
       children: [
         Text(
-          'Delivery Partner',
+          'Dehat Delivery ',
           style: AppTextStyles.heading1.copyWith(color: AppColors.textPrimary),
           textAlign: TextAlign.center,
         ),
