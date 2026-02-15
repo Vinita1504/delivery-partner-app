@@ -6,11 +6,11 @@ import 'interceptors/logging_interceptor.dart';
 /// Dio HTTP client wrapper with configurable interceptors
 class DioClient {
   late final Dio dio;
-
+  
   // Default tenant ID - can be updated if needed
   static const String defaultTenantId = 'Tenant_01';
   static String _tenantId = defaultTenantId;
-
+  
   // Base URL for the API
   static const String baseUrl = 'https://dataservices.workbird.cloud';
   // static const String baseUrl =
