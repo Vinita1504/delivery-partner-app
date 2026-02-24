@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/gradient_button.dart';
@@ -118,7 +119,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                 // Login button
                 _buildLoginButton(authState),
-                const SizedBox(height: 32),
+
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: () => context.pushNamed('forgotPassword'),
+                    child: Text(
+                      'Forgot Password?',
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.primary,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
 
                 // Info text
                 _buildInfoText(),

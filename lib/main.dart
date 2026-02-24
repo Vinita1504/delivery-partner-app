@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/network/network_provider.dart';
 import 'core/routes/app_routes.dart';
 import 'core/theme/app_theme.dart';
+import 'core/services/fcm_service.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 
 void main() async {
@@ -41,6 +42,9 @@ void main() async {
   // Initialize auth status check
   // We don't await this so the UI shows up immediately (loading state handles this)
   container.read(authControllerProvider.notifier).checkAuthStatus();
+
+  // Initialize FCM service
+  container.read(fcmServiceProvider).initialize();
 
   runApp(
     UncontrolledProviderScope(

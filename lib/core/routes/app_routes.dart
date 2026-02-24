@@ -6,6 +6,9 @@ import '../../features/auth/presentation/controllers/auth_controller.dart';
 import '../../features/auth/presentation/pages/change_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/profile_page.dart';
+import '../../features/auth/presentation/pages/forgot_password_page.dart';
+import '../../features/auth/presentation/pages/verify_otp_forgot_password_page.dart';
+import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/help/presentation/pages/help_page.dart';
 import '../../features/order_history/presentation/pages/order_history_page.dart';
@@ -20,6 +23,9 @@ class AppRoutes {
   AppRoutes._();
 
   static const String login = '/login';
+  static const String forgotPassword = '/forgot-password';
+  static const String verifyOtpForgotPassword = '/forgot-password/verify';
+  static const String resetPassword = '/forgot-password/reset';
   static const String dashboard = '/dashboard';
   static const String assignedOrders = '/assigned-orders';
   static const String orderHistory = '/order-history';
@@ -62,6 +68,32 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.login,
         name: 'login',
         builder: (context, state) => const LoginPage(),
+      ),
+
+      // Forgot Password Flow
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        name: 'forgotPassword',
+        builder: (context, state) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.verifyOtpForgotPassword,
+        name: 'verifyOtpForgotPassword',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final phone = extra?['phone'] as String? ?? '';
+          return VerifyOtpForgotPasswordPage(phone: phone);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.resetPassword,
+        name: 'resetPassword',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final phone = extra?['phone'] as String? ?? '';
+          final otp = extra?['otp'] as String? ?? '';
+          return ResetPasswordPage(phone: phone, otp: otp);
+        },
       ),
 
       // Dashboard (Home)

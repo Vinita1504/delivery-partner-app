@@ -25,6 +25,25 @@ abstract class AuthRepository {
     String newPassword,
   );
 
+  /// Update FCM device token
+  Future<Either<Failure, void>> updateDeviceToken(String token);
+
+  /// Forgot password - Send OTP
+  Future<Either<Failure, void>> forgotPasswordSendOtp(String phone);
+
+  /// Forgot password - Verify OTP
+  Future<Either<Failure, void>> forgotPasswordVerifyOtp(
+    String phone,
+    String otpCode,
+  );
+
+  /// Forgot password - Reset
+  Future<Either<Failure, void>> forgotPasswordReset(
+    String phone,
+    String otpCode,
+    String newPassword,
+  );
+
   /// Check if user is logged in
   Future<bool> isLoggedIn();
 

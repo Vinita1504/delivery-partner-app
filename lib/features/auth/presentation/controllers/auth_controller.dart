@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/usecases/get_current_user_usecase.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
+import '../../domain/repositories/auth_repository.dart';
+import '../../../../core/services/fcm_service.dart';
 import '../providers/auth_providers.dart';
 import 'auth_state.dart';
 
@@ -14,14 +16,20 @@ class AuthController extends StateNotifier<AuthState> {
   final LoginUseCase _loginUseCase;
   final LogoutUseCase _logoutUseCase;
   final GetCurrentUserUseCase _getCurrentUserUseCase;
+  final AuthRepository _authRepository;
+  final FcmService _fcmService;
 
   AuthController({
     required LoginUseCase loginUseCase,
     required LogoutUseCase logoutUseCase,
     required GetCurrentUserUseCase getCurrentUserUseCase,
+    required AuthRepository authRepository,
+    required FcmService fcmService,
   }) : _loginUseCase = loginUseCase,
        _logoutUseCase = logoutUseCase,
        _getCurrentUserUseCase = getCurrentUserUseCase,
+       _authRepository = authRepository,
+       _fcmService = fcmService,
        super(const AuthState());
 
   /// Check if user is already logged in on app start
@@ -65,6 +73,10 @@ class AuthController extends StateNotifier<AuthState> {
           agent: agent,
         );
         log('[AUTH_CONTROLLER] State updated, returning true');
+
+        // Sync FCM token to backend
+        _fcmService.syncToken();
+
         return true;
       },
     );
@@ -85,6 +97,60 @@ class AuthController extends StateNotifier<AuthState> {
     );
   }
 
+  Future<bool> forgotPasswordSendOtp(String phone) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    final result = await _authRepository.forgotPasswordSendOtp(phone);
+    state = state.copyWith(isLoading: false);
+    return result.fold((failure) {
+      state = state.copyWith(errorMessage: failure.message);
+      return false;
+    }, (_) => true);
+  }
+
+  Future<bool> forgotPasswordVerifyOtp(String phone, String otp) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    final result = await _authRepository.forgotPasswordVerifyOtp(phone, otp);
+    state = state.copyWith(isLoading: false);
+    return result.fold((failure) {
+      state = state.copyWith(errorMessage: failure.message);
+      return false;
+    }, (_) => true);
+  }
+
+  Future<bool> forgotPasswordReset(
+    String phone,
+    String otp,
+    String newPassword,
+  ) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    final result = await _authRepository.forgotPasswordReset(
+      phone,
+      otp,
+      newPassword,
+    );
+    state = state.copyWith(isLoading: false);
+    return result.fold((failure) {
+      state = state.copyWith(errorMessage: failure.message);
+      return false;
+    }, (_) => true);
+  }
+
+  Future<bool> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    final result = await _authRepository.changePassword(
+      currentPassword,
+      newPassword,
+    );
+    state = state.copyWith(isLoading: false);
+    return result.fold((failure) {
+      state = state.copyWith(errorMessage: failure.message);
+      return false;
+    }, (_) => true);
+  }
+
   /// Clear any error message
   void clearError() {
     state = state.copyWith(clearError: true);
@@ -97,11 +163,15 @@ final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
     final loginUseCase = ref.watch(loginUseCaseProvider);
     final logoutUseCase = ref.watch(logoutUseCaseProvider);
     final getCurrentUserUseCase = ref.watch(getCurrentUserUseCaseProvider);
+    final authRepository = ref.watch(authRepositoryProvider);
+    final fcmService = ref.watch(fcmServiceProvider);
 
     return AuthController(
       loginUseCase: loginUseCase,
       logoutUseCase: logoutUseCase,
       getCurrentUserUseCase: getCurrentUserUseCase,
+      authRepository: authRepository,
+      fcmService: fcmService,
     );
   },
 );

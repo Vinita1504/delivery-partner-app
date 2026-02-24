@@ -6,8 +6,15 @@ class ApiEndpoints {
   static const String auth = '/auth';
   static const String loginDeliveryAgent = '$auth/login-delivery-agent';
   static const String logout = '/auth/logout';
-  static const String changePassword = '/auth/change-password';
+  static const String changePassword = '/delivery-agent/change-password';
+  static const String forgotPasswordSendOtp =
+      '/auth/delivery-agent/forgot-password/send-otp';
+  static const String forgotPasswordVerifyOtp =
+      '/auth/delivery-agent/forgot-password/verify-otp';
+  static const String forgotPasswordReset =
+      '/auth/delivery-agent/forgot-password/reset';
   static const String profile = '/profile';
+  static const String updateDeviceToken = '/delivery-agent/device-token';
 
   // Delivery Agent
   static const String deliveryAgent = '/delivery-agent';

@@ -144,9 +144,68 @@ class AuthRepositoryImpl implements AuthRepository {
     String currentPassword,
     String newPassword,
   ) async {
-    // TODO: Implement when API is available
-    return const Left(
-      ServerFailure(message: 'Change password API not implemented'),
-    );
+    try {
+      await _authDataSource.changePassword(currentPassword, newPassword);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> forgotPasswordSendOtp(String phone) async {
+    try {
+      await _authDataSource.forgotPasswordSendOtp(phone);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> forgotPasswordVerifyOtp(
+    String phone,
+    String otpCode,
+  ) async {
+    try {
+      await _authDataSource.forgotPasswordVerifyOtp(phone, otpCode);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> forgotPasswordReset(
+    String phone,
+    String otpCode,
+    String newPassword,
+  ) async {
+    try {
+      await _authDataSource.forgotPasswordReset(phone, otpCode, newPassword);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateDeviceToken(String token) async {
+    try {
+      await _authDataSource.updateDeviceToken(token);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
   }
 }

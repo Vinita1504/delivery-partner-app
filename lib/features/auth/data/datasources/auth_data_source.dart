@@ -8,4 +8,15 @@ abstract class AuthDataSource {
   /// Returns [LoginResponseDTO] on success
   /// Throws [ServerException] on API errors
   Future<LoginResponseDTO> loginDeliveryAgent(LoginRequestDTO request);
+
+  Future<void> changePassword(String currentPassword, String newPassword);
+  Future<void> updateDeviceToken(String token);
+
+  Future<void> forgotPasswordSendOtp(String phone);
+  Future<void> forgotPasswordVerifyOtp(String phone, String otpCode);
+  Future<void> forgotPasswordReset(
+    String phone,
+    String otpCode,
+    String newPassword,
+  );
 }

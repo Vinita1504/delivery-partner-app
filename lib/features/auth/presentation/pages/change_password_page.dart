@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../controllers/auth_controller.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/gradient_button.dart';
@@ -9,14 +11,14 @@ import '../../../../core/widgets/animated_card.dart';
 import '../../../../core/utils/validators.dart';
 
 /// Change Password page with premium UI
-class ChangePasswordPage extends StatefulWidget {
+class ChangePasswordPage extends ConsumerStatefulWidget {
   const ChangePasswordPage({super.key});
 
   @override
-  State<ChangePasswordPage> createState() => _ChangePasswordPageState();
+  ConsumerState<ChangePasswordPage> createState() => _ChangePasswordPageState();
 }
 
-class _ChangePasswordPageState extends State<ChangePasswordPage> {
+class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
@@ -37,23 +39,37 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   Future<void> _handleChangePassword() async {
     if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
 
     setState(() => _isLoading = true);
 
-    // TODO: Implement actual password change logic
-    await Future.delayed(const Duration(seconds: 2));
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .changePassword(
+          _currentPasswordController.text,
+          _newPasswordController.text,
+        );
 
     if (mounted) {
       setState(() => _isLoading = false);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password changed successfully'),
-          backgroundColor: AppColors.success,
-        ),
-      );
-
-      context.pop();
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password changed successfully'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        context.pop();
+      } else {
+        final errorMessage = ref.read(authControllerProvider).errorMessage;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage ?? 'Failed to change password'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
