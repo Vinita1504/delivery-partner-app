@@ -25,6 +25,8 @@ class ApiEndpoints {
       '$deliveryAgent/orders/$id';
   static String markOrderPickedUp(String id) =>
       '$deliveryAgent/orders/$id/pickup';
+  static String markOrderReturnPickedUp(String id) =>
+      '$deliveryAgent/orders/$id/return-pickup';
   static String markOrderOutForDelivery(String id) =>
       '$deliveryAgent/orders/$id/out-for-delivery';
   static String sendOtp(String id) => '$deliveryAgent/orders/$id/send-otp';

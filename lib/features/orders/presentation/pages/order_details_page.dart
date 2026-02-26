@@ -340,7 +340,7 @@ class OrderDetailsPage extends ConsumerWidget {
           ),
         ],
       ),
-      bottomSheet: !order.isDelivered
+      bottomSheet: !order.isTerminal
           ? _buildBottomAction(context, ref, order, state.isUpdating)
           : null,
     );
@@ -609,6 +609,13 @@ class OrderDetailsPage extends ConsumerWidget {
       }
     } else if (order.status == OrderStatus.assigned) {
       await notifier.markAsPickedUp();
+    } else if (order.status == OrderStatus.returnRequested) {
+      final success = await notifier.markAsReturnPickedUp();
+      if (success && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Return picked up successfully!')),
+        );
+      }
     } else if (order.status == OrderStatus.pickedUp) {
       // Mark out for delivery and get response
       final response = await notifier.markAsOutForDelivery();
@@ -650,6 +657,8 @@ class OrderDetailsPage extends ConsumerWidget {
         return Icons.local_shipping_rounded;
       case OrderStatus.outForDelivery:
         return Icons.check_circle_rounded;
+      case OrderStatus.returnRequested:
+        return Icons.assignment_return_rounded;
       default:
         return Icons.arrow_forward_rounded;
     }

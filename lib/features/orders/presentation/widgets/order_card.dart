@@ -190,6 +190,18 @@ class OrderCard extends StatelessWidget {
           color: AppColors.warning,
           icon: Icons.keyboard_return_rounded,
         );
+      case OrderStatus.returnRequested:
+        return StatusBadge(
+          label: 'Return Requested',
+          color: AppColors.warning,
+          icon: Icons.assignment_return_rounded,
+        );
+      case OrderStatus.returnPickedUp:
+        return StatusBadge(
+          label: 'Return Picked Up',
+          color: AppColors.success,
+          icon: Icons.check_circle_rounded,
+        );
     }
   }
 }

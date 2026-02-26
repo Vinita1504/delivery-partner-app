@@ -9,7 +9,9 @@ enum OrderStatus {
   outForDelivery('OUT_FOR_DELIVERY', 'Out for Delivery'),
   delivered('DELIVERED', 'Delivered'),
   cancelled('CANCELLED', 'Cancelled'),
-  returned('RETURNED', 'Returned');
+  returned('RETURNED', 'Returned'),
+  returnRequested('RETURN_REQUESTED', 'Return Requested'),
+  returnPickedUp('RETURN_PICKED_UP', 'Return Picked Up');
 
   final String value;
   final String displayName;
