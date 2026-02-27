@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/animation_constants.dart';
 import '../../../../core/widgets/shimmer_loader.dart';
+import '../../data/models/order_model.dart';
 import '../providers/orders_provider.dart';
 import '../widgets/order_card.dart';
 
@@ -17,13 +18,18 @@ class AssignedOrdersPage extends ConsumerStatefulWidget {
   ConsumerState<AssignedOrdersPage> createState() => _AssignedOrdersPageState();
 }
 
-class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
-  final ScrollController _scrollController = ScrollController();
+class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage>
+    with SingleTickerProviderStateMixin {
+  final ScrollController _deliveriesScrollController = ScrollController();
+  final ScrollController _pickupsScrollController = ScrollController();
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
+    _tabController = TabController(length: 2, vsync: this);
+    _deliveriesScrollController.addListener(_onScroll);
+    _pickupsScrollController.addListener(_onScroll);
     Future.microtask(() {
       ref.read(ordersProvider.notifier).fetchOrders();
     });
@@ -31,13 +37,19 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _tabController.dispose();
+    _deliveriesScrollController.dispose();
+    _pickupsScrollController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
+    final activeScrollController = _tabController.index == 0
+        ? _deliveriesScrollController
+        : _pickupsScrollController;
+
+    if (activeScrollController.position.pixels >=
+        activeScrollController.position.maxScrollExtent - 200) {
       ref.read(ordersProvider.notifier).loadMore();
     }
   }
@@ -55,16 +67,38 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
             onPressed: () => ref.read(ordersProvider.notifier).refresh(),
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textSecondary,
+          indicatorColor: AppColors.primary,
+          tabs: const [
+            Tab(text: 'Deliveries'),
+            Tab(text: 'Pickups'),
+          ],
+        ),
       ),
-      body: RefreshIndicator(
-        onRefresh: () => ref.read(ordersProvider.notifier).refresh(),
-        color: AppColors.primary,
-        child: _buildBody(ordersState),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // Deliveries Tab
+          RefreshIndicator(
+            onRefresh: () => ref.read(ordersProvider.notifier).refresh(),
+            color: AppColors.primary,
+            child: _buildBody(ordersState, isPickupTab: false),
+          ),
+          // Pickups Tab
+          RefreshIndicator(
+            onRefresh: () => ref.read(ordersProvider.notifier).refresh(),
+            color: AppColors.primary,
+            child: _buildBody(ordersState, isPickupTab: true),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBody(OrdersState ordersState) {
+  Widget _buildBody(OrdersState ordersState, {required bool isPickupTab}) {
     if (ordersState.isLoading) {
       return _buildLoadingState();
     }
@@ -73,11 +107,19 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
       return _buildErrorState(ordersState.error!);
     }
 
-    if (ordersState.isEmpty) {
-      return _buildEmptyState();
+    // Filter orders based on tab
+    final filteredOrders = ordersState.orders.where((order) {
+      final isReturn =
+          order.status.name == 'returnRequested' ||
+          order.status.name == 'returnPickedUp';
+      return isPickupTab ? isReturn : !isReturn;
+    }).toList();
+
+    if (filteredOrders.isEmpty && !ordersState.isLoadingMore) {
+      return _buildEmptyState(isPickupTab);
     }
 
-    return _buildOrdersList(ordersState);
+    return _buildOrdersList(ordersState, filteredOrders, isPickupTab);
   }
 
   Widget _buildLoadingState() {
@@ -120,7 +162,7 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isPickupTab) {
     return Center(
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -136,7 +178,9 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons.inbox_rounded,
+                      isPickupTab
+                          ? Icons.assignment_return_rounded
+                          : Icons.local_shipping_rounded,
                       size: 64,
                       color: AppColors.primary.withValues(alpha: 0.5),
                     ),
@@ -150,7 +194,9 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
                   .fadeIn(),
               const SizedBox(height: 24),
               Text(
-                    'No orders assigned',
+                    isPickupTab
+                        ? 'No pickups assigned'
+                        : 'No deliveries assigned',
                     style: AppTextStyles.heading3.copyWith(
                       color: AppColors.textPrimary,
                     ),
@@ -160,7 +206,9 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
                   .slideY(begin: 0.2, duration: AnimationConstants.normal),
               const SizedBox(height: 8),
               Text(
-                    'Check back later for new deliveries.\nPull down to refresh.',
+                    isPickupTab
+                        ? 'Check back later for new return pickups.\nPull down to refresh.'
+                        : 'Check back later for new deliveries.\nPull down to refresh.',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -176,14 +224,19 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
     );
   }
 
-  Widget _buildOrdersList(OrdersState ordersState) {
+  Widget _buildOrdersList(
+    OrdersState ordersState,
+    List<OrderModel> filteredOrders,
+    bool isPickupTab,
+  ) {
     return ListView.builder(
-      controller: _scrollController,
+      controller: isPickupTab
+          ? _pickupsScrollController
+          : _deliveriesScrollController,
       padding: const EdgeInsets.all(16),
-      itemCount:
-          ordersState.orders.length + (ordersState.isLoadingMore ? 1 : 0),
+      itemCount: filteredOrders.length + (ordersState.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index >= ordersState.orders.length) {
+        if (index >= filteredOrders.length) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(16),
@@ -191,7 +244,7 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage> {
             ),
           );
         }
-        final order = ordersState.orders[index];
+        final order = filteredOrders[index];
         return OrderCard(
           order: order,
           index: index,

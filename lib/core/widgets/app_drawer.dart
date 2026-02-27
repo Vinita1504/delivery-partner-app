@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/controllers/auth_controller.dart';
+import '../../features/notifications/presentation/providers/notification_provider.dart';
 import '../../main.dart';
 import '../extensions/extensions.dart';
 import '../routes/app_routes.dart';
+import '../theme/app_colors.dart';
 
 /// Navigation drawer for the app
 class AppDrawer extends ConsumerWidget {
@@ -82,6 +84,7 @@ class AppDrawer extends ConsumerWidget {
                   route: AppRoutes.orderHistory,
                   currentRoute: currentRoute,
                 ),
+                _buildNotificationMenuItem(ref),
                 const Divider(),
                 _DrawerMenuItem(
                   icon: Icons.person_rounded,
@@ -110,6 +113,74 @@ class AppDrawer extends ConsumerWidget {
           _LogoutTile(ref: ref),
         ],
       ),
+    );
+  }
+
+  Widget _buildNotificationMenuItem(WidgetRef ref) {
+    return Consumer(
+      builder: (context, ref, _) {
+        final unreadCount = ref.watch(unreadNotificationCountProvider);
+        final isSelected = currentRoute == AppRoutes.notifications;
+
+        return ListTile(
+          leading: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(
+                Icons.notifications_rounded,
+                size: 22.sp,
+                color: isSelected
+                    ? context.colorScheme.primary
+                    : context.colorScheme.onSurfaceVariant,
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: -6,
+                  top: -4,
+                  child: Container(
+                    padding: EdgeInsets.all(3.w),
+                    decoration: const BoxDecoration(
+                      color: AppColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 16.w,
+                      minHeight: 16.w,
+                    ),
+                    child: Text(
+                      unreadCount > 9 ? '9+' : unreadCount.toString(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          title: Text(
+            'Notifications',
+            style: context.textTheme.bodyLarge?.copyWith(
+              color: isSelected
+                  ? context.colorScheme.primary
+                  : context.colorScheme.onSurface,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            ),
+          ),
+          selected: isSelected,
+          selectedTileColor: context.colorScheme.primary.withValues(alpha: 0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.r),
+          ),
+          onTap: () {
+            if (!isSelected) {
+              context.push(AppRoutes.notifications);
+            }
+          },
+        );
+      },
     );
   }
 }

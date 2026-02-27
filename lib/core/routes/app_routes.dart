@@ -11,6 +11,7 @@ import '../../features/auth/presentation/pages/verify_otp_forgot_password_page.d
 import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/help/presentation/pages/help_page.dart';
+import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/order_history/presentation/pages/order_history_page.dart';
 import '../../features/orders/presentation/pages/assigned_orders_page.dart';
 import '../../features/orders/presentation/pages/cod_confirmation_page.dart';
@@ -35,6 +36,7 @@ class AppRoutes {
   static const String deliverySuccess = '/order/:orderId/success';
   static const String profile = '/profile';
   static const String changePassword = '/profile/change-password';
+  static const String notifications = '/notifications';
   static const String help = '/help';
 }
 
@@ -47,14 +49,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
     redirect: (context, state) {
       final isLoggedIn = authState.isAuthenticated;
-      final isLoggingIn = state.uri.toString() == AppRoutes.login;
+      final currentPath = state.uri.toString();
+      final isLoggingIn = currentPath == AppRoutes.login;
+      final isAuthFlow =
+          isLoggingIn || currentPath.startsWith('/forgot-password');
 
-      // If user is not logged in and not on login page, redirect to login
-      if (!isLoggedIn && !isLoggingIn) {
+      // If user is not logged in and not on an auth flow page, redirect to login
+      if (!isLoggedIn && !isAuthFlow) {
         return AppRoutes.login;
       }
 
-      // If user is logged in and on login page, redirect to dashboard
+      // If user is logged in and on login page, redirect to dashboardwh
       if (isLoggedIn && isLoggingIn) {
         return AppRoutes.dashboard;
       }
@@ -115,6 +120,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.orderHistory,
         name: 'orderHistory',
         builder: (context, state) => const OrderHistoryPage(),
+      ),
+
+      // Notifications
+      GoRoute(
+        path: AppRoutes.notifications,
+        name: 'notifications',
+        builder: (context, state) => const NotificationsPage(),
       ),
 
       // Order Details

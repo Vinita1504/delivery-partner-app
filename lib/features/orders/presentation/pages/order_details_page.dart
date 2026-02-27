@@ -440,11 +440,24 @@ class OrderDetailsPage extends ConsumerWidget {
   Widget _buildMapPlaceholder(OrderModel order) {
     return GestureDetector(
       onTap: () async {
-        if (order.deliveryAddress?.hasCoordinates == true) {
-          final uri = Uri.parse(order.deliveryAddress!.mapsUrl);
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri);
-          }
+        final address = order.deliveryAddress;
+        if (address == null) return;
+
+        // Use coordinates if available, otherwise search by address text
+        final String url;
+        if (address.hasCoordinates) {
+          url =
+              'https://www.google.com/maps/dir/?api=1&destination=${address.latitude},${address.longitude}';
+        } else {
+          url =
+              'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address.fullAddress)}';
+        }
+
+        final uri = Uri.parse(url);
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          debugPrint('Could not launch Maps: $e');
         }
       },
       child: Container(

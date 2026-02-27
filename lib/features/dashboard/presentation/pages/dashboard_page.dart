@@ -63,8 +63,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 DashboardStatsSection(
                   assignedCount: stats.assignedCount,
                   deliveredCount: stats.deliveredToday,
+                  returnPickupCount: stats.returnPickupCount,
                   assignedColor: AppColors.statusAssigned,
                   deliveredColor: AppColors.statusDelivered,
+                  returnPickupColor: AppColors.warning,
                 ),
               SizedBox(height: 24.h),
               DashboardQuickActions(

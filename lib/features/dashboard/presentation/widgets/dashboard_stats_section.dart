@@ -33,9 +33,13 @@ class DashboardStatCard extends StatelessWidget {
             children: [
               Icon(icon, color: color, size: 24.sp),
               SizedBox(width: 8.w),
-              Text(
-                label,
-                style: context.textTheme.labelMedium?.copyWith(color: color),
+              Expanded(
+                child: Text(
+                  label,
+                  style: context.textTheme.labelMedium?.copyWith(color: color),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -53,19 +57,22 @@ class DashboardStatCard extends StatelessWidget {
   }
 }
 
-/// Stats section with overview title and stat cards
 class DashboardStatsSection extends StatelessWidget {
   final int assignedCount;
   final int deliveredCount;
+  final int returnPickupCount;
   final Color assignedColor;
   final Color deliveredColor;
+  final Color returnPickupColor;
 
   const DashboardStatsSection({
     super.key,
     required this.assignedCount,
     required this.deliveredCount,
+    required this.returnPickupCount,
     required this.assignedColor,
     required this.deliveredColor,
+    required this.returnPickupColor,
   });
 
   @override
@@ -90,13 +97,22 @@ class DashboardStatsSection extends StatelessWidget {
                 color: assignedColor,
               ),
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: 8.w),
             Expanded(
               child: DashboardStatCard(
                 icon: Icons.check_circle_rounded,
                 label: 'Delivered',
                 value: '$deliveredCount',
                 color: deliveredColor,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: DashboardStatCard(
+                icon: Icons.local_shipping_rounded,
+                label: 'Pickups',
+                value: '$returnPickupCount',
+                color: returnPickupColor,
               ),
             ),
           ],

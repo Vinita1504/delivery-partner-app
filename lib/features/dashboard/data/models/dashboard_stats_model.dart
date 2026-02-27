@@ -11,11 +11,14 @@ class DashboardStatsModel {
   final int deliveredToday;
   @JsonKey(defaultValue: 0)
   final int totalDelivered;
+  @JsonKey(defaultValue: 0)
+  final int returnPickupCount;
 
   const DashboardStatsModel({
     this.assignedCount = 0,
     this.deliveredToday = 0,
     this.totalDelivered = 0,
+    this.returnPickupCount = 0,
   });
 
   factory DashboardStatsModel.fromJson(Map<String, dynamic> json) =>
@@ -36,11 +39,13 @@ class DashboardStatsModel {
     int? assignedCount,
     int? deliveredToday,
     int? totalDelivered,
+    int? returnPickupCount,
   }) {
     return DashboardStatsModel(
       assignedCount: assignedCount ?? this.assignedCount,
       deliveredToday: deliveredToday ?? this.deliveredToday,
       totalDelivered: totalDelivered ?? this.totalDelivered,
+      returnPickupCount: returnPickupCount ?? this.returnPickupCount,
     );
   }
 }
