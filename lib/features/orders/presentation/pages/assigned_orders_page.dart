@@ -111,6 +111,7 @@ class _AssignedOrdersPageState extends ConsumerState<AssignedOrdersPage>
     final filteredOrders = ordersState.orders.where((order) {
       final isReturn =
           order.status.name == 'returnRequested' ||
+          order.status.name == 'returnPickupAssigned' ||
           order.status.name == 'returnPickedUp';
       return isPickupTab ? isReturn : !isReturn;
     }).toList();

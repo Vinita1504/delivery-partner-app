@@ -11,6 +11,7 @@ enum OrderStatus {
   cancelled('CANCELLED', 'Cancelled'),
   returned('RETURNED', 'Returned'),
   returnRequested('RETURN_REQUESTED', 'Return Requested'),
+  returnPickupAssigned('RETURN_PICKUP_ASSIGNED', 'Pickup Assigned'),
   returnPickedUp('RETURN_PICKED_UP', 'Return Picked Up');
 
   final String value;
@@ -35,6 +36,13 @@ enum OrderStatus {
   bool get isTerminal =>
       this == OrderStatus.delivered ||
       this == OrderStatus.cancelled ||
+      this == OrderStatus.returned;
+
+  /// Check if this is a return pickup order
+  bool get isReturnFlow =>
+      this == OrderStatus.returnRequested ||
+      this == OrderStatus.returnPickupAssigned ||
+      this == OrderStatus.returnPickedUp ||
       this == OrderStatus.returned;
 }
 

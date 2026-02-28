@@ -347,6 +347,11 @@ class OrderDetailsPage extends ConsumerWidget {
   }
 
   Widget _buildOrderTimeline(OrderModel order) {
+    // Use return-specific timeline for return flow orders
+    if (order.status.isReturnFlow) {
+      return _buildReturnTimeline(order);
+    }
+
     final steps = [
       OrderStatus.assigned,
       OrderStatus.pickedUp,
@@ -487,6 +492,139 @@ class OrderDetailsPage extends ConsumerWidget {
     ).animate().fadeIn(delay: 100.ms);
   }
 
+  /// Build return-specific timeline
+  Widget _buildReturnTimeline(OrderModel order) {
+    final steps = [
+      OrderStatus.returnPickupAssigned,
+      OrderStatus.returnPickedUp,
+      OrderStatus.returned,
+    ];
+    final labels = ['Pickup Assigned', 'Return Picked Up', 'Returned'];
+    final currentStepIndex = steps.indexWhere((s) => s == order.status);
+    final actualIndex = currentStepIndex >= 0 ? currentStepIndex : 0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: Column(
+        children: [
+          // Return label
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.assignment_return_rounded,
+                      size: 14,
+                      color: Colors.orange,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Return Pickup',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: Colors.orange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Steps
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(steps.length, (index) {
+              final isCompleted = index <= actualIndex;
+              final isCurrent = index == actualIndex;
+
+              return Expanded(
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 2,
+                            color: index == 0
+                                ? Colors.transparent
+                                : (index <= actualIndex
+                                      ? Colors.orange
+                                      : AppColors.grey200),
+                          ),
+                        ),
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: isCompleted
+                                ? Colors.orange
+                                : AppColors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isCompleted
+                                  ? Colors.orange
+                                  : AppColors.grey300,
+                              width: 2,
+                            ),
+                          ),
+                          child: isCompleted
+                              ? const Icon(
+                                  Icons.check,
+                                  size: 14,
+                                  color: AppColors.white,
+                                )
+                              : null,
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: 2,
+                            color: index == steps.length - 1
+                                ? Colors.transparent
+                                : (index < actualIndex
+                                      ? Colors.orange
+                                      : AppColors.grey200),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      labels[index],
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: isCurrent ? Colors.orange : AppColors.grey500,
+                        fontWeight: isCurrent
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        fontSize: 10,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    ).animate().fadeIn().slideY(begin: -0.1);
+  }
+
   Widget _buildInfoRow(
     BuildContext context,
     IconData icon,
@@ -622,12 +760,26 @@ class OrderDetailsPage extends ConsumerWidget {
       }
     } else if (order.status == OrderStatus.assigned) {
       await notifier.markAsPickedUp();
-    } else if (order.status == OrderStatus.returnRequested) {
+    } else if (order.status == OrderStatus.returnRequested ||
+        order.status == OrderStatus.returnPickupAssigned) {
       final success = await notifier.markAsReturnPickedUp();
       if (success && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Return picked up successfully!')),
         );
+      }
+    } else if (order.status == OrderStatus.returnPickedUp) {
+      final success = await notifier.markAsReturned();
+      if (success && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Order marked as returned. Refund will be processed.',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        context.pop();
       }
     } else if (order.status == OrderStatus.pickedUp) {
       // Mark out for delivery and get response
@@ -671,7 +823,10 @@ class OrderDetailsPage extends ConsumerWidget {
       case OrderStatus.outForDelivery:
         return Icons.check_circle_rounded;
       case OrderStatus.returnRequested:
+      case OrderStatus.returnPickupAssigned:
         return Icons.assignment_return_rounded;
+      case OrderStatus.returnPickedUp:
+        return Icons.check_circle_outline_rounded;
       default:
         return Icons.arrow_forward_rounded;
     }

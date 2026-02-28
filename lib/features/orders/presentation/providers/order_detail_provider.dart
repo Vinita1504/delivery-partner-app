@@ -135,6 +135,36 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
     }
   }
 
+  /// Mark return order as returned (final step)
+  Future<bool> markAsReturned() async {
+    if (state.order == null || state.isUpdating) return false;
+
+    debugPrint('🚚 [OrderDetailNotifier] Marking order as returned');
+    state = state.copyWith(isUpdating: true, clearUpdateError: true);
+
+    // Optimistic update
+    final previousOrder = state.order!;
+    state = state.copyWith(
+      order: previousOrder.copyWith(orderStatus: 'RETURNED'),
+    );
+
+    try {
+      await _dataSource.markAsReturned(previousOrder.id);
+      state = state.copyWith(isUpdating: false);
+      debugPrint('✅ [OrderDetailNotifier] Order marked as returned');
+      return true;
+    } catch (e) {
+      debugPrint('❌ [OrderDetailNotifier] Error: $e');
+      // Rollback
+      state = state.copyWith(
+        order: previousOrder,
+        isUpdating: false,
+        updateError: _getErrorMessage(e),
+      );
+      return false;
+    }
+  }
+
   /// Mark order as out for delivery
   /// Returns response with {requiresOtp, otpSent, devOtp} or null on failure
   Future<Map<String, dynamic>?> markAsOutForDelivery() async {

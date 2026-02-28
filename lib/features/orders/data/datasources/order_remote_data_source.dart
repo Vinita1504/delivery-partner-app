@@ -21,6 +21,9 @@ abstract class OrderRemoteDataSource {
   /// Mark return as picked up
   Future<void> markReturnPickedUp(String orderId);
 
+  /// Mark order as returned
+  Future<void> markAsReturned(String orderId);
+
   /// Mark order as out for delivery
   /// Returns: {success, message, requiresOtp, otpSent, devOtp}
   Future<Map<String, dynamic>> markOrderOutForDelivery(String orderId);
@@ -132,6 +135,18 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
       debugPrint('✅ [OrderDS] Return marked as picked up');
     } catch (e) {
       debugPrint('❌ [OrderDS] Error marking return as picked up: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> markAsReturned(String orderId) async {
+    debugPrint('🚚 [OrderDS] Marking order as returned - orderId: $orderId');
+    try {
+      await _dioClient.post(ApiEndpoints.markOrderReturned(orderId));
+      debugPrint('✅ [OrderDS] Order marked as returned');
+    } catch (e) {
+      debugPrint('❌ [OrderDS] Error marking order as returned: $e');
       rethrow;
     }
   }

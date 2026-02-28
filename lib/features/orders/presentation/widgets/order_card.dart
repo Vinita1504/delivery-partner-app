@@ -196,6 +196,12 @@ class OrderCard extends StatelessWidget {
           color: AppColors.warning,
           icon: Icons.assignment_return_rounded,
         );
+      case OrderStatus.returnPickupAssigned:
+        return StatusBadge(
+          label: 'Pickup Assigned',
+          color: AppColors.info,
+          icon: Icons.person_pin_circle_rounded,
+        );
       case OrderStatus.returnPickedUp:
         return StatusBadge(
           label: 'Return Picked Up',

@@ -34,6 +34,8 @@ class ApiEndpoints {
       '$deliveryAgent/orders/$id/verify-otp';
   static String completeDelivery(String id) =>
       '$deliveryAgent/orders/$id/complete';
+  static String markOrderReturned(String id) =>
+      '$deliveryAgent/orders/$id/returned';
 
   // Issues
   static const String reportIssue = '/issues';

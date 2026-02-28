@@ -126,8 +126,10 @@ class OrderModel {
         return 'Returned';
       case OrderStatus.returnRequested:
         return 'Mark Return Picked Up';
+      case OrderStatus.returnPickupAssigned:
+        return 'Mark Return Picked Up';
       case OrderStatus.returnPickedUp:
-        return 'Return Picked Up';
+        return 'Mark as Returned';
       default:
         return 'Pending';
     }
