@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../../../core/extensions/extensions.dart';
+
 part 'delivery_slot_model.g.dart';
 
 /// Delivery slot model matching API response
@@ -26,7 +28,8 @@ class DeliverySlotModel {
   Map<String, dynamic> toJson() => _$DeliverySlotModelToJson(this);
 
   /// Formatted time range for display (e.g., "14:00 - 16:00")
-  String get formattedTimeRange => '$startTime - $endTime';
+  String get formattedTimeRange =>
+      '${startTime.toLocalTimeAMPM} - ${endTime.toLocalTimeAMPM}';
 
   /// Formatted date for display
   String get formattedDate {
@@ -39,7 +42,7 @@ class DeliverySlotModel {
   }
 
   /// Full slot display string
-  String get displayString => '$formattedDate, $formattedTimeRange';
+  String get displayString => formattedTimeRange;
 
   DeliverySlotModel copyWith({
     String? id,

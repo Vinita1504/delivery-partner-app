@@ -11,6 +11,33 @@ extension StringExtension on String {
   bool get isValidOtp => RegExp(r'^[0-9]{4}$').hasMatch(this);
   String get maskedPhone =>
       length < 4 ? this : '${'*' * (length - 4)}${substring(length - 4)}';
+
+  /// Parse strings like "10:30:00" or ISO timestamps to local "hh:mm a" format.
+  String get toLocalTimeAMPM {
+    if (isEmpty) return this;
+    try {
+      // First try appending a dummy date to parse time-only strings like "14:00:00"
+      final now = DateTime.now();
+      final dateStr =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      DateTime? parsed;
+
+      // Attempt 1: Parse just time (e.g. "14:00:00") assuming today
+      try {
+        parsed = DateTime.parse('${dateStr}T$this');
+      } catch (_) {}
+
+      // Attempt 2: Direct parse (e.g., if it's already an ISO timestamp)
+      parsed ??= DateTime.parse(this);
+
+      // Convert to local time and format
+      final local = parsed.toLocal();
+      return local.toTimeString;
+    } catch (_) {
+      // Return original if parsing fails
+      return this;
+    }
+  }
 }
 
 /// Custom extensions on nullable String

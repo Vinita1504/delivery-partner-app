@@ -756,7 +756,8 @@ class OrderDetailsPage extends ConsumerWidget {
           },
         );
       } else {
-        context.push('/order/$orderId/otp');
+        final state = ref.read(orderDetailProvider(orderId));
+        context.push('/order/$orderId/otp', extra: {'devOtp': state.devOtp});
       }
     } else if (order.status == OrderStatus.assigned) {
       await notifier.markAsPickedUp();
@@ -785,32 +786,31 @@ class OrderDetailsPage extends ConsumerWidget {
       // Mark out for delivery and get response
       final response = await notifier.markAsOutForDelivery();
       if (response != null && context.mounted) {
-        final requiresOtp = response['requiresOtp'] == true;
-        final devOtp = response['devOtp'] as String?;
-
-        if (requiresOtp || order.isPrepaid) {
-          // Navigate to OTP page for prepaid orders
-          context.push('/order/$orderId/otp', extra: {'devOtp': devOtp});
-        } else {
-          // COD order - navigate to cash collection
-          context.push(
-            '/order/$orderId/cod',
-            extra: {
-              'amount': order.finalAmount > 0
-                  ? order.finalAmount
-                  : order.totalAmount,
-            },
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order marked as out for delivery!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     }
   }
 
   Future<void> _callCustomer(String phone) async {
     if (phone.isEmpty) return;
-    final uri = Uri.parse('tel:$phone');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    // Clean phone number to ensure it works properly with the tel: scheme
+    final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    final uri = Uri.parse('tel:$cleanPhone');
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        // Fallback for some devices where canLaunchUrl returns false
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      debugPrint('Could not launch phone call: $e');
     }
   }
 

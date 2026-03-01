@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/animation_constants.dart';
 import '../../../../core/widgets/gradient_button.dart';
+import '../providers/order_detail_provider.dart';
 
 /// Delivery success page with celebration animation
-class DeliverySuccessPage extends StatefulWidget {
+class DeliverySuccessPage extends ConsumerStatefulWidget {
   final String orderId;
 
   const DeliverySuccessPage({super.key, required this.orderId});
 
   @override
-  State<DeliverySuccessPage> createState() => _DeliverySuccessPageState();
+  ConsumerState<DeliverySuccessPage> createState() =>
+      _DeliverySuccessPageState();
 }
 
-class _DeliverySuccessPageState extends State<DeliverySuccessPage>
+class _DeliverySuccessPageState extends ConsumerState<DeliverySuccessPage>
     with TickerProviderStateMixin {
   late AnimationController _confettiController;
 
@@ -69,9 +72,6 @@ class _DeliverySuccessPageState extends State<DeliverySuccessPage>
                   // Subtitle
                   _buildSubtitle(),
                   const SizedBox(height: 40),
-
-                  // Stats card
-                  _buildStatsCard(),
 
                   const Spacer(),
 
@@ -217,8 +217,12 @@ class _DeliverySuccessPageState extends State<DeliverySuccessPage>
   }
 
   Widget _buildSubtitle() {
+    final orderState = ref.read(orderDetailProvider(widget.orderId));
+    final displayId =
+        orderState.order?.orderNumber ?? widget.orderId.substring(0, 8);
+
     return Text(
-          'Order #${widget.orderId} has been\ndelivered successfully',
+          'Order #$displayId has been\ndelivered successfully',
           style: AppTextStyles.bodyLarge.copyWith(
             color: AppColors.textSecondary,
           ),
@@ -227,65 +231,6 @@ class _DeliverySuccessPageState extends State<DeliverySuccessPage>
         .animate()
         .fadeIn(delay: 500.ms, duration: AnimationConstants.normal)
         .slideY(begin: 0.2, delay: 500.ms, duration: AnimationConstants.normal);
-  }
-
-  Widget _buildStatsCard() {
-    return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.grey50,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.grey200),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildStatItem(
-                icon: Icons.access_time_filled_rounded,
-                label: 'Time',
-                value: '12 min',
-                color: AppColors.statusAssigned,
-              ),
-              Container(width: 1, height: 40, color: AppColors.grey200),
-              _buildStatItem(
-                icon: Icons.check_circle_rounded,
-                label: 'Status',
-                value: 'Complete',
-                color: AppColors.success,
-              ),
-              Container(width: 1, height: 40, color: AppColors.grey200),
-              _buildStatItem(
-                icon: Icons.star_rounded,
-                label: 'Rating',
-                value: '★ 5.0',
-                color: AppColors.secondary,
-              ),
-            ],
-          ),
-        )
-        .animate()
-        .fadeIn(delay: 600.ms, duration: AnimationConstants.normal)
-        .slideY(begin: 0.2, delay: 600.ms, duration: AnimationConstants.normal);
-  }
-
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(height: 6),
-        Text(value, style: AppTextStyles.labelLarge),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: AppTextStyles.caption.copyWith(color: AppColors.textHint),
-        ),
-      ],
-    );
   }
 
   Widget _buildBackButton() {

@@ -13,6 +13,7 @@ class OrderDetailState {
   final bool isUpdating;
   final String? error;
   final String? updateError;
+  final String? devOtp;
 
   const OrderDetailState({
     this.order,
@@ -20,6 +21,7 @@ class OrderDetailState {
     this.isUpdating = false,
     this.error,
     this.updateError,
+    this.devOtp,
   });
 
   /// Check if data is loaded
@@ -37,6 +39,7 @@ class OrderDetailState {
     bool? isUpdating,
     String? error,
     String? updateError,
+    String? devOtp,
     bool clearError = false,
     bool clearUpdateError = false,
   }) {
@@ -46,6 +49,7 @@ class OrderDetailState {
       isUpdating: isUpdating ?? this.isUpdating,
       error: clearError ? null : (error ?? this.error),
       updateError: clearUpdateError ? null : (updateError ?? this.updateError),
+      devOtp: devOtp ?? this.devOtp,
     );
   }
 }
@@ -184,7 +188,10 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
       final response = await _dataSource.markOrderOutForDelivery(
         previousOrder.id,
       );
-      state = state.copyWith(isUpdating: false);
+      state = state.copyWith(
+        isUpdating: false,
+        devOtp: response['devOtp'] as String?,
+      );
       debugPrint(
         '✅ [OrderDetailNotifier] Order marked as out for delivery. '
         'requiresOtp: ${response['requiresOtp']}',
@@ -211,7 +218,10 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
 
     try {
       final response = await _dataSource.sendOtp(state.order!.id);
-      state = state.copyWith(isUpdating: false);
+      state = state.copyWith(
+        isUpdating: false,
+        devOtp: response['devOtp'] as String?,
+      );
       debugPrint('✅ [OrderDetailNotifier] OTP sent');
       return response;
     } catch (e) {

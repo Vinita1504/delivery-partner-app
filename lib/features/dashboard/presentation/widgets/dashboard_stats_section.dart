@@ -31,12 +31,13 @@ class DashboardStatCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 24.sp),
-              SizedBox(width: 8.w),
               Expanded(
                 child: Text(
                   label,
-                  style: context.textTheme.labelMedium?.copyWith(color: color),
+                  style: context.textTheme.labelMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
