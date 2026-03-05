@@ -8,11 +8,11 @@ class ApiEndpoints {
   static const String logout = '/auth/logout';
   static const String changePassword = '/delivery-agent/change-password';
   static const String forgotPasswordSendOtp =
-      '/auth/delivery-agent/forgot-password/send-otp';
+      '/delivery-agent/forgot-password/send-otp';
   static const String forgotPasswordVerifyOtp =
-      '/auth/delivery-agent/forgot-password/verify-otp';
+      '/delivery-agent/forgot-password/verify-otp';
   static const String forgotPasswordReset =
-      '/auth/delivery-agent/forgot-password/reset';
+      '/delivery-agent/forgot-password/reset';
   static const String profile = '/profile';
   static const String updateDeviceToken = '/delivery-agent/device-token';
 

@@ -6,8 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/text_fields.dart';
 import '../../../../core/utils/validators.dart';
-import '../controllers/auth_controller.dart';
-import '../controllers/auth_state.dart';
+import '../controllers/forgot_password_controller.dart';
 import '../../../../main.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
@@ -20,8 +19,6 @@ class ForgotPasswordPage extends ConsumerStatefulWidget {
 class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
-  bool _isLoading = false;
-
   @override
   void dispose() {
     _phoneController.dispose();
@@ -32,16 +29,10 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
 
-    setState(() => _isLoading = true);
-
     final phone = _phoneController.text.trim();
     final success = await ref
-        .read(authControllerProvider.notifier)
-        .forgotPasswordSendOtp(phone);
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
+        .read(forgotPasswordControllerProvider.notifier)
+        .sendOtp(phone);
 
     if (success) {
       scaffoldMessengerKey.currentState?.showSnackBar(
@@ -59,7 +50,13 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AuthState>(authControllerProvider, (previous, next) {
+    final state = ref.watch(forgotPasswordControllerProvider);
+    final isLoading = state.isLoading;
+
+    ref.listen<ForgotPasswordState>(forgotPasswordControllerProvider, (
+      previous,
+      next,
+    ) {
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -103,7 +100,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                 const SizedBox(height: 32),
                 GradientButton(
                   text: 'Send OTP',
-                  isLoading: _isLoading,
+                  isLoading: isLoading,
                   onPressed: _handleSendOtp,
                 ),
               ],

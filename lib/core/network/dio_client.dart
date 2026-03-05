@@ -14,7 +14,7 @@ class DioClient {
   // Base URL for the API
   // static const String baseUrl = 'https://dataservices.workbird.cloud';
   static const String baseUrl =
-      'https://4979-2409-40e4-19-7277-f106-cc7c-e437-b849.ngrok-free.app';
+      'https://4256-2409-40e4-114e-2bde-c175-bca8-c8c3-a549.ngrok-free.app';
 
   /// Setter for tenant ID
   static void setTenantId(String id) {

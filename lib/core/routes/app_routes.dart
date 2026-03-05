@@ -42,13 +42,15 @@ class AppRoutes {
 
 /// Provider for the GoRouter configuration
 final goRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authControllerProvider);
+  final isAuthenticated = ref.watch(
+    authControllerProvider.select((state) => state.isAuthenticated),
+  );
 
   return GoRouter(
     initialLocation: AppRoutes.login,
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      final isLoggedIn = authState.isAuthenticated;
+      final isLoggedIn = isAuthenticated;
       final currentPath = state.uri.toString();
       final isLoggingIn = currentPath == AppRoutes.login;
       final isAuthFlow =

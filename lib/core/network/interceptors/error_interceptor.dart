@@ -76,7 +76,7 @@ class ErrorInterceptor extends Interceptor {
       case 403:
         return const AuthException(message: 'Access denied');
       case 404:
-        return ServerException(message: 'Resource not found', statusCode: 404);
+        return ServerException(message: message, statusCode: 404);
       case 422:
         return ServerException(message: message, statusCode: 422);
       case 500:

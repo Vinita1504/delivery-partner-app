@@ -6,8 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/gradient_button.dart';
 import '../../../../core/widgets/text_fields.dart';
 import '../../../../core/utils/validators.dart';
-import '../controllers/auth_controller.dart';
-import '../controllers/auth_state.dart';
+import '../controllers/forgot_password_controller.dart';
 import '../../../../main.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
@@ -24,7 +23,6 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _isLoading = false;
   bool _isPasswordVisible = false;
   bool _isConfirmVisible = false;
 
@@ -39,19 +37,9 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
 
-    setState(() => _isLoading = true);
-
     final success = await ref
-        .read(authControllerProvider.notifier)
-        .forgotPasswordReset(
-          widget.phone,
-          widget.otp,
-          _passwordController.text,
-        );
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
+        .read(forgotPasswordControllerProvider.notifier)
+        .resetPassword(widget.phone, widget.otp, _passwordController.text);
 
     if (success) {
       scaffoldMessengerKey.currentState?.showSnackBar(
@@ -69,7 +57,13 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AuthState>(authControllerProvider, (previous, next) {
+    final state = ref.watch(forgotPasswordControllerProvider);
+    final isLoading = state.isLoading;
+
+    ref.listen<ForgotPasswordState>(forgotPasswordControllerProvider, (
+      previous,
+      next,
+    ) {
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -134,7 +128,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 const SizedBox(height: 32),
                 GradientButton(
                   text: 'Reset Password',
-                  isLoading: _isLoading,
+                  isLoading: isLoading,
                   onPressed: _handleResetPassword,
                 ),
               ],

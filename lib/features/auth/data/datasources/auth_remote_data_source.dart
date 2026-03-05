@@ -37,6 +37,10 @@ class AuthRemoteDataSource implements AuthDataSource {
         statusCode: response.statusCode,
       );
     } on DioException catch (e) {
+      if (e.error is ServerException) {
+        throw e.error!;
+      }
+
       // Handle specific error codes
       if (e.response?.statusCode == 401) {
         final message =
@@ -66,6 +70,9 @@ class AuthRemoteDataSource implements AuthDataSource {
         );
       }
     } on DioException catch (e) {
+      if (e.error is ServerException) {
+        throw e.error!;
+      }
       throw ServerException(
         message:
             e.response?.data?['message'] ??
@@ -90,6 +97,9 @@ class AuthRemoteDataSource implements AuthDataSource {
         );
       }
     } on DioException catch (e) {
+      if (e.error is ServerException) {
+        throw e.error!;
+      }
       throw ServerException(
         message:
             e.response?.data?['message'] ??
@@ -118,6 +128,9 @@ class AuthRemoteDataSource implements AuthDataSource {
         );
       }
     } on DioException catch (e) {
+      if (e.error is ServerException) {
+        throw e.error!;
+      }
       throw ServerException(
         message:
             e.response?.data?['message'] ??
@@ -145,6 +158,9 @@ class AuthRemoteDataSource implements AuthDataSource {
         );
       }
     } on DioException catch (e) {
+      if (e.error is ServerException) {
+        throw e.error!;
+      }
       throw ServerException(
         message:
             e.response?.data?['message'] ??
@@ -169,6 +185,9 @@ class AuthRemoteDataSource implements AuthDataSource {
         );
       }
     } on DioException catch (e) {
+      if (e.error is ServerException) {
+        throw e.error!;
+      }
       throw ServerException(
         message:
             e.response?.data?['message'] ??

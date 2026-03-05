@@ -5,8 +5,7 @@ import 'package:pinput/pinput.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/gradient_button.dart';
-import '../controllers/auth_controller.dart';
-import '../controllers/auth_state.dart';
+import '../controllers/forgot_password_controller.dart';
 
 class VerifyOtpForgotPasswordPage extends ConsumerStatefulWidget {
   final String phone;
@@ -21,8 +20,6 @@ class VerifyOtpForgotPasswordPage extends ConsumerStatefulWidget {
 class _VerifyOtpForgotPasswordPageState
     extends ConsumerState<VerifyOtpForgotPasswordPage> {
   final _otpController = TextEditingController();
-  bool _isLoading = false;
-
   @override
   void dispose() {
     _otpController.dispose();
@@ -41,15 +38,9 @@ class _VerifyOtpForgotPasswordPageState
     }
     FocusScope.of(context).unfocus();
 
-    setState(() => _isLoading = true);
-
     final success = await ref
-        .read(authControllerProvider.notifier)
-        .forgotPasswordVerifyOtp(widget.phone, _otpController.text);
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
+        .read(forgotPasswordControllerProvider.notifier)
+        .verifyOtp(widget.phone, _otpController.text);
 
     if (success) {
       if (mounted) {
@@ -63,7 +54,13 @@ class _VerifyOtpForgotPasswordPageState
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AuthState>(authControllerProvider, (previous, next) {
+    final state = ref.watch(forgotPasswordControllerProvider);
+    final isLoading = state.isLoading;
+
+    ref.listen<ForgotPasswordState>(forgotPasswordControllerProvider, (
+      previous,
+      next,
+    ) {
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -131,7 +128,7 @@ class _VerifyOtpForgotPasswordPageState
               const SizedBox(height: 48),
               GradientButton(
                 text: 'Verify',
-                isLoading: _isLoading,
+                isLoading: isLoading,
                 onPressed: _handleVerifyOtp,
               ),
             ],
