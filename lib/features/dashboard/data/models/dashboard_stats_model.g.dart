@@ -12,6 +12,8 @@ DashboardStatsModel _$DashboardStatsModelFromJson(Map<String, dynamic> json) =>
       deliveredToday: (json['deliveredToday'] as num?)?.toInt() ?? 0,
       totalDelivered: (json['totalDelivered'] as num?)?.toInt() ?? 0,
       returnPickupCount: (json['returnPickupCount'] as num?)?.toInt() ?? 0,
+      codCollected: (json['codCollected'] as num?)?.toInt() ?? 0,
+      codPending: (json['codPending'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$DashboardStatsModelToJson(
@@ -21,4 +23,6 @@ Map<String, dynamic> _$DashboardStatsModelToJson(
   'deliveredToday': instance.deliveredToday,
   'totalDelivered': instance.totalDelivered,
   'returnPickupCount': instance.returnPickupCount,
+  'codCollected': instance.codCollected,
+  'codPending': instance.codPending,
 };

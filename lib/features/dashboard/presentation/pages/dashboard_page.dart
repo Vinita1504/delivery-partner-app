@@ -64,6 +64,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   assignedCount: stats.assignedCount,
                   deliveredCount: stats.deliveredToday,
                   returnPickupCount: stats.returnPickupCount,
+                  codCollected: stats.codCollected,
+                  codPending: stats.codPending,
                   assignedColor: AppColors.statusAssigned,
                   deliveredColor: AppColors.statusDelivered,
                   returnPickupColor: AppColors.warning,

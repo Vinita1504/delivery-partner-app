@@ -62,6 +62,8 @@ class DashboardStatsSection extends StatelessWidget {
   final int assignedCount;
   final int deliveredCount;
   final int returnPickupCount;
+  final int codCollected;
+  final int codPending;
   final Color assignedColor;
   final Color deliveredColor;
   final Color returnPickupColor;
@@ -71,6 +73,8 @@ class DashboardStatsSection extends StatelessWidget {
     required this.assignedCount,
     required this.deliveredCount,
     required this.returnPickupCount,
+    this.codCollected = 0,
+    this.codPending = 0,
     required this.assignedColor,
     required this.deliveredColor,
     required this.returnPickupColor,
@@ -113,6 +117,35 @@ class DashboardStatsSection extends StatelessWidget {
                 icon: Icons.local_shipping_rounded,
                 label: 'Pickups',
                 value: '$returnPickupCount',
+                color: returnPickupColor,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 16.h),
+        Text(
+          "Cash Operations",
+          style: context.textTheme.labelLarge?.copyWith(
+            color: context.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        SizedBox(height: 12.h),
+        Row(
+          children: [
+            Expanded(
+              child: DashboardStatCard(
+                icon: Icons.account_balance_wallet_rounded,
+                label: 'COD Collected',
+                value: '₹$codCollected',
+                color: deliveredColor,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: DashboardStatCard(
+                icon: Icons.pending_actions_rounded,
+                label: 'COD Pending',
+                value: '₹$codPending',
                 color: returnPickupColor,
               ),
             ),
