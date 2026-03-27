@@ -17,6 +17,8 @@ OrderItemModel _$OrderItemModelFromJson(Map<String, dynamic> json) =>
       totalPrice: (json['totalPrice'] as num).toDouble(),
       productImage: json['productImage'] as String?,
       specialRequirements: json['specialRequirements'] as String?,
+      bucketId: json['bucketId'] as String?,
+      bucketItems: json['bucketItems'] as List<dynamic>?,
     );
 
 Map<String, dynamic> _$OrderItemModelToJson(OrderItemModel instance) =>
@@ -30,4 +32,6 @@ Map<String, dynamic> _$OrderItemModelToJson(OrderItemModel instance) =>
       'totalPrice': instance.totalPrice,
       'productImage': instance.productImage,
       'specialRequirements': instance.specialRequirements,
+      'bucketId': instance.bucketId,
+      'bucketItems': instance.bucketItems,
     };

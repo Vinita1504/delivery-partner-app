@@ -15,6 +15,8 @@ class OrderItemModel {
   final double totalPrice;
   final String? productImage;
   final String? specialRequirements;
+  final String? bucketId;
+  final List<dynamic>? bucketItems;
 
   const OrderItemModel({
     required this.id,
@@ -26,6 +28,8 @@ class OrderItemModel {
     required this.totalPrice,
     this.productImage,
     this.specialRequirements,
+    this.bucketId,
+    this.bucketItems,
   });
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) =>
@@ -54,6 +58,8 @@ class OrderItemModel {
     double? totalPrice,
     String? productImage,
     String? specialRequirements,
+    String? bucketId,
+    List<dynamic>? bucketItems,
   }) {
     return OrderItemModel(
       id: id ?? this.id,
@@ -65,6 +71,8 @@ class OrderItemModel {
       totalPrice: totalPrice ?? this.totalPrice,
       productImage: productImage ?? this.productImage,
       specialRequirements: specialRequirements ?? this.specialRequirements,
+      bucketId: bucketId ?? this.bucketId,
+      bucketItems: bucketItems ?? this.bucketItems,
     );
   }
 }

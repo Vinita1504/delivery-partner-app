@@ -212,6 +212,91 @@ class OrderDetailsPage extends ConsumerWidget {
                                     ),
                                   ],
                                 ),
+                                if (item.bucketItems != null && item.bucketItems!.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: Theme.of(context).dividerColor.withOpacity(0.2),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Included in Bucket:',
+                                          style: AppTextStyles.bodySmall.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        ...item.bucketItems!.map((child) {
+                                          final childName = child['product']?['name'] ?? child['name'] ?? 'Product';
+                                          final childQty = child['quantity']?.toString() ?? '1';
+                                          final unit = child['product']?['unit'] ?? child['unit'] ?? '';
+                                          final displayName = unit.isNotEmpty ? '$childName ($childQty $unit)' : '$childName (x$childQty)';
+                                          final String imageUrl = child['product']?['featuredImage'] ?? child['product']?['imageUrl'] ?? child['imageUrl'] ?? child['featuredImage'] ?? '';
+                                          
+                                          return Padding(
+                                            padding: const EdgeInsets.only(bottom: 8.0),
+                                            child: Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                if (imageUrl.isNotEmpty)
+                                                  Container(
+                                                    width: 32,
+                                                    height: 32,
+                                                    margin: const EdgeInsets.only(right: 12),
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(context).colorScheme.surface,
+                                                      borderRadius: BorderRadius.circular(6),
+                                                      border: Border.all(
+                                                        color: Theme.of(context).dividerColor.withOpacity(0.4),
+                                                      ),
+                                                    ),
+                                                    child: ClipRRect(
+                                                      borderRadius: BorderRadius.circular(6),
+                                                      child: Image.network(
+                                                        imageUrl,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder: (context, error, stackTrace) {
+                                                          return Icon(
+                                                            Icons.image_not_supported_outlined,
+                                                            size: 16,
+                                                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                                          );
+                                                        },
+                                                      ),
+                                                    ),
+                                                  )
+                                                else
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(top: 4, right: 8),
+                                                    child: Icon(Icons.check_circle_outline, size: 16, color: AppColors.primary.withOpacity(0.6)),
+                                                  ),
+                                                Expanded(
+                                                  child: Padding(
+                                                    padding: EdgeInsets.only(top: imageUrl.isNotEmpty ? 6.0 : 2.0),
+                                                    child: Text(
+                                                      displayName,
+                                                      style: AppTextStyles.bodySmall.copyWith(
+                                                        color: AppColors.textPrimary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        }),
+                                      ],
+                                    ),
+                                  )
+                                ],
                                 if (!isLast) const Divider(height: 20),
                               ],
                             );
