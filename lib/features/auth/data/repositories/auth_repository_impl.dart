@@ -123,6 +123,15 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     try {
+      // Best-effort: clear device token from backend BEFORE losing the auth token.
+      // This prevents push notifications being sent to this device for a different
+      // agent who may log in next.
+      try {
+        await _authDataSource.updateDeviceToken('');
+      } catch (_) {
+        // Intentionally swallowed — must not block logout if the network call fails.
+      }
+
       await clearToken();
       return const Right(null);
     } catch (e) {
