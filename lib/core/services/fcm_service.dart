@@ -57,6 +57,13 @@ class FcmService {
       debugPrint('User granted permission: ${settings.authorizationStatus}');
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // Allow notifications to show when the app is in the foreground natively (especially for iOS)
+        await _messaging.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
         // Setup message handlers
         FirebaseMessaging.onBackgroundMessage(
           _firebaseMessagingBackgroundHandler,
