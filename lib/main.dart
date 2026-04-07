@@ -12,6 +12,8 @@ import 'core/theme/app_theme.dart';
 import 'core/services/fcm_service.dart';
 import 'core/services/local_notification_service.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
+import 'core/widgets/no_connection_screen.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -91,13 +93,29 @@ class DeliveryPartnerApp extends ConsumerWidget {
       designSize: const Size(390, 844), // iPhone 14 dimensions
       minTextAdapt: true,
       splitScreenMode: true,
-      builder: (context, child) => MaterialApp.router(
-        title: 'Delivery Partner',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        routerConfig: router,
-        scaffoldMessengerKey: scaffoldMessengerKey,
-      ),
+      builder: (context, child) {
+        final networkStatus = ref.watch(networkConnectivityProvider);
+
+        return Stack(
+          children: [
+            if (child != null)
+              MaterialApp.router(
+                title: 'Delivery Partner',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.lightTheme,
+                routerConfig: router,
+                scaffoldMessengerKey: scaffoldMessengerKey,
+              ),
+            if (networkStatus.value == InternetConnectionStatus.disconnected)
+              const Positioned.fill(
+                child: Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: NoConnectionScreen(),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

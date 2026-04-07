@@ -10,7 +10,6 @@ import '../widgets/dashboard_app_bar.dart';
 import '../widgets/dashboard_greeting.dart';
 import '../widgets/dashboard_stats_section.dart';
 import '../widgets/dashboard_quick_actions.dart';
-import 'notification_test_page.dart';
 
 /// Dashboard page - Home overview with stats and quick actions
 class DashboardPage extends ConsumerStatefulWidget {
@@ -79,10 +78,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 secondaryColor: AppColors.secondary,
                 historyColor: AppColors.grey600,
               ),
-              SizedBox(height: 24.h),
-              // DEV: Test notification panel
-              _TestNotifButton(),
-              SizedBox(height: 24.h),
               // const DashboardRecentActivity(),
             ],
           ),
@@ -144,46 +139,3 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 }
 
-/// DEV ONLY: Button to open the notification test panel.
-class _TestNotifButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const NotificationTestPage()),
-      ),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF6F00), Color(0xFFF57C00)],
-          ),
-          borderRadius: BorderRadius.circular(14.r),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFFF6F00).withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.bug_report_rounded, color: Colors.white),
-            SizedBox(width: 8.w),
-            Text(
-              'Test Notifications',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 14.sp,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

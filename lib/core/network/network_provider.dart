@@ -6,6 +6,13 @@ import 'interceptors/auth_interceptor.dart';
 import 'interceptors/error_interceptor.dart';
 import 'interceptors/logging_interceptor.dart';
 import 'network_info.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+
+/// Provides a continuous stream of the device's internet connection status.
+final networkConnectivityProvider = StreamProvider<InternetConnectionStatus>((ref) {
+  final checker = InternetConnectionChecker();
+  return checker.onStatusChange;
+});
 
 /// Provider for SharedPreferences instance
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
