@@ -94,7 +94,7 @@ class OrderDetailsPage extends ConsumerWidget {
                   const SizedBox(height: 20),
 
                   // Map Placeholder
-                  _buildMapPlaceholder(order),
+                  _buildMapPlaceholder(order, context),
                   const SizedBox(height: 20),
 
                   // Customer info
@@ -527,11 +527,16 @@ class OrderDetailsPage extends ConsumerWidget {
     ).animate().fadeIn().slideY(begin: -0.1);
   }
 
-  Widget _buildMapPlaceholder(OrderModel order) {
+  Widget _buildMapPlaceholder(OrderModel order, BuildContext context) {
     return GestureDetector(
       onTap: () async {
         final address = order.deliveryAddress;
-        if (address == null) return;
+        if (address == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No delivery address available')),
+          );
+          return;
+        }
 
         // Use coordinates if available, otherwise search by address text
         final String url;
@@ -545,9 +550,26 @@ class OrderDetailsPage extends ConsumerWidget {
 
         final uri = Uri.parse(url);
         try {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          final canLaunch = await canLaunchUrl(uri);
+          if (canLaunch) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } else {
+            debugPrint('canLaunchUrl returned false for: $url');
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Could not open Maps. Please check if a maps app is installed.'),
+                ),
+              );
+            }
+          }
         } catch (e) {
           debugPrint('Could not launch Maps: $e');
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to open Maps: $e')),
+            );
+          }
         }
       },
       child: Container(
