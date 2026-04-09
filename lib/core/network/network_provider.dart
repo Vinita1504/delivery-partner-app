@@ -6,12 +6,13 @@ import 'interceptors/auth_interceptor.dart';
 import 'interceptors/error_interceptor.dart';
 import 'interceptors/logging_interceptor.dart';
 import 'network_info.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
-/// Provides a continuous stream of the device's internet connection status.
-final networkConnectivityProvider = StreamProvider<InternetConnectionStatus>((ref) {
-  final checker = InternetConnectionChecker();
-  return checker.onStatusChange;
+/// Provides a continuous stream of the device's connectivity status.
+/// connectivity_plus v7.x emits `List<ConnectivityResult>` on each change.
+final networkConnectivityProvider =
+    StreamProvider<List<ConnectivityResult>>((ref) {
+  return Connectivity().onConnectivityChanged;
 });
 
 /// Provider for SharedPreferences instance

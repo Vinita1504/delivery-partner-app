@@ -41,11 +41,14 @@ class AuthController extends StateNotifier<AuthState> {
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, isAuthenticated: false),
-      (agent) => state = state.copyWith(
-        isLoading: false,
-        isAuthenticated: true,
-        agent: agent,
-      ),
+      (agent) {
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: true,
+          agent: agent,
+        );
+        _fcmService.syncToken();
+      },
     );
   }
 
@@ -64,7 +67,7 @@ class AuthController extends StateNotifier<AuthState> {
         state = state.copyWith(isLoading: false, errorMessage: failure.message);
         return false;
       },
-      (agent) {
+      (agent) async {
         log('[AUTH_CONTROLLER] Login SUCCESS: ${agent.name}');
         log('[AUTH_CONTROLLER] Setting authenticated state...');
         state = state.copyWith(
@@ -75,7 +78,7 @@ class AuthController extends StateNotifier<AuthState> {
         log('[AUTH_CONTROLLER] State updated, returning true');
 
         // Sync FCM token to backend
-        _fcmService.syncToken();
+        await _fcmService.syncToken();
 
         return true;
       },

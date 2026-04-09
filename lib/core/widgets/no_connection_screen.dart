@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class NoConnectionScreen extends ConsumerWidget {
   const NoConnectionScreen({super.key});
@@ -69,8 +69,8 @@ class NoConnectionScreen extends ConsumerWidget {
                   height: 44.h,
                   child: ElevatedButton(
                     onPressed: () async {
-                      // Manual check triggers provider stream update implicitly
-                      await InternetConnectionChecker().hasConnection;
+                      // Re-check connectivity — triggers stream update
+                      await Connectivity().checkConnectivity();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF007AFF), // Bright Blue

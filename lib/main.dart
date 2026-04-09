@@ -13,7 +13,7 @@ import 'core/services/fcm_service.dart';
 import 'core/services/local_notification_service.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'core/widgets/no_connection_screen.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -96,23 +96,30 @@ class DeliveryPartnerApp extends ConsumerWidget {
       builder: (context, child) {
         final networkStatus = ref.watch(networkConnectivityProvider);
 
-        return Stack(
-          children: [
-            MaterialApp.router(
-              title: 'Delivery Partner',
-              debugShowCheckedModeBanner: false,
-              theme: AppTheme.lightTheme,
-              routerConfig: router,
-              scaffoldMessengerKey: scaffoldMessengerKey,
-            ),
-            if (networkStatus.value == InternetConnectionStatus.disconnected)
-              const Positioned.fill(
-                child: Directionality(
-                  textDirection: TextDirection.ltr,
+        // Stack must be wrapped in Directionality because it sits above
+        // MaterialApp in the widget tree (MaterialApp is what normally
+        // provides Directionality). Without this, Stack's default
+        // AlignmentDirectional.topStart throws "No Directionality widget found".
+        return Directionality(
+          textDirection: TextDirection.ltr,
+          child: Stack(
+            children: [
+              MaterialApp.router(
+                title: 'Delivery Partner',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.lightTheme,
+                routerConfig: router,
+                scaffoldMessengerKey: scaffoldMessengerKey,
+              ),
+              // Offline when the result list is [none] only
+              if (networkStatus.value?.every(
+                      (r) => r == ConnectivityResult.none) ==
+                  true)
+                const Positioned.fill(
                   child: NoConnectionScreen(),
                 ),
-              ),
-          ],
+            ],
+          ),
         );
       },
     );
