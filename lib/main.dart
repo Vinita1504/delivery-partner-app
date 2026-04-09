@@ -98,14 +98,13 @@ class DeliveryPartnerApp extends ConsumerWidget {
 
         return Stack(
           children: [
-            if (child != null)
-              MaterialApp.router(
-                title: 'Delivery Partner',
-                debugShowCheckedModeBanner: false,
-                theme: AppTheme.lightTheme,
-                routerConfig: router,
-                scaffoldMessengerKey: scaffoldMessengerKey,
-              ),
+            MaterialApp.router(
+              title: 'Delivery Partner',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme,
+              routerConfig: router,
+              scaffoldMessengerKey: scaffoldMessengerKey,
+            ),
             if (networkStatus.value == InternetConnectionStatus.disconnected)
               const Positioned.fill(
                 child: Directionality(
