@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/network/network_provider.dart';
+import '../../data/datasources/notification_remote_data_source.dart';
 import '../../data/models/app_notification.dart';
 
 /// Key for persisting notifications in SharedPreferences
@@ -36,11 +37,18 @@ class NotificationState {
   bool get hasUnread => unreadCount > 0;
 }
 
+/// Remote Data Source Provider
+final notificationRemoteDataSourceProvider = Provider<NotificationRemoteDataSource>((ref) {
+  final dioClient = ref.watch(dioClientProvider);
+  return NotificationRemoteDataSource(dioClient: dioClient);
+});
+
 /// Notification state provider
 final notificationProvider =
     StateNotifierProvider<NotificationNotifier, NotificationState>((ref) {
       final prefs = ref.watch(sharedPreferencesProvider);
-      return NotificationNotifier(prefs);
+      final remoteSource = ref.watch(notificationRemoteDataSourceProvider);
+      return NotificationNotifier(prefs, remoteSource);
     });
 
 /// Unread count provider for easy access
@@ -50,37 +58,56 @@ final unreadNotificationCountProvider = Provider<int>((ref) {
 
 class NotificationNotifier extends StateNotifier<NotificationState> {
   final SharedPreferences _prefs;
+  final NotificationRemoteDataSource _remoteSource;
 
-  NotificationNotifier(this._prefs) : super(const NotificationState()) {
-    _loadNotifications();
+  NotificationNotifier(this._prefs, this._remoteSource) : super(const NotificationState()) {
+    _loadNotificationsLocally();
+    fetchRemoteNotifications();
   }
 
-  /// Load notifications from SharedPreferences
-  void _loadNotifications() {
+  /// Load notifications from SharedPreferences synchronously as fallback
+  void _loadNotificationsLocally() {
     try {
       final jsonString = _prefs.getString(_notificationsKey);
       if (jsonString != null && jsonString.isNotEmpty) {
         final notifications = AppNotification.decodeList(jsonString);
-        // Sort by most recent first
         notifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         state = state.copyWith(notifications: notifications);
       }
     } catch (e) {
-      debugPrint('Error loading notifications: $e');
+      debugPrint('Error loading local notifications: $e');
+    }
+  }
+
+  /// Fetch notifications from backend API
+  Future<void> fetchRemoteNotifications({bool showLoader = false}) async {
+    if (showLoader) {
+      state = state.copyWith(isLoading: true);
+    }
+    
+    try {
+      final remoteNotifications = await _remoteSource.fetchNotifications(page: 1, limit: _maxNotifications);
+      state = state.copyWith(notifications: remoteNotifications, isLoading: false);
+      await _saveNotificationsLocally();
+    } catch (e) {
+      debugPrint('Error fetching remote notifications: $e');
+      if (showLoader) {
+        state = state.copyWith(isLoading: false);
+      }
     }
   }
 
   /// Save notifications to SharedPreferences
-  Future<void> _saveNotifications() async {
+  Future<void> _saveNotificationsLocally() async {
     try {
       final jsonString = AppNotification.encodeList(state.notifications);
       await _prefs.setString(_notificationsKey, jsonString);
     } catch (e) {
-      debugPrint('Error saving notifications: $e');
+      debugPrint('Error saving local notifications: $e');
     }
   }
 
-  /// Add a new notification
+  /// Add a new notification locally (e.g. fired directly from FCM when app is foregrounded)
   Future<void> addNotification({
     required String title,
     required String body,
@@ -100,13 +127,14 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
 
     final updatedList = [notification, ...state.notifications];
 
-    // Keep only the latest notifications
     final trimmed = updatedList.length > _maxNotifications
         ? updatedList.sublist(0, _maxNotifications)
         : updatedList;
 
     state = state.copyWith(notifications: trimmed);
-    await _saveNotifications();
+    await _saveNotificationsLocally();
+    // After modifying locally, refresh remote asynchronously so unread badges sync
+    fetchRemoteNotifications();
   }
 
   /// Mark a notification as read
@@ -119,7 +147,13 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     }).toList();
 
     state = state.copyWith(notifications: updatedList);
-    await _saveNotifications();
+    await _saveNotificationsLocally();
+    
+    try {
+      await _remoteSource.markAsRead(notificationId);
+    } catch (e) {
+      debugPrint('Error remotely marking notification as read: $e');
+    }
   }
 
   /// Mark all notifications as read
@@ -129,20 +163,26 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     }).toList();
 
     state = state.copyWith(notifications: updatedList);
-    await _saveNotifications();
+    await _saveNotificationsLocally();
+    
+    try {
+      await _remoteSource.markAllAsRead();
+    } catch (e) {
+      debugPrint('Error remotely marking all notifications as read: $e');
+    }
   }
 
-  /// Delete a notification
+  /// Delete a notification locally
   Future<void> deleteNotification(String notificationId) async {
     final updatedList = state.notifications
         .where((n) => n.id != notificationId)
         .toList();
 
     state = state.copyWith(notifications: updatedList);
-    await _saveNotifications();
+    await _saveNotificationsLocally();
   }
 
-  /// Clear all notifications
+  /// Clear all notifications locally
   Future<void> clearAll() async {
     state = state.copyWith(notifications: []);
     await _prefs.remove(_notificationsKey);

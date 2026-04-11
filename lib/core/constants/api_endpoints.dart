@@ -39,4 +39,9 @@ class ApiEndpoints {
 
   // Issues
   static const String reportIssue = '/issues';
+
+  // Notifications
+  static const String notifications = '$deliveryAgent/notifications';
+  static String markNotificationRead(String id) => '$notifications/$id/read';
+  static const String markAllNotificationsRead = '$notifications/read-all';
 }

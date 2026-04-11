@@ -50,8 +50,12 @@ class DeliveryAddressModel {
     return parts.join(', ');
   }
 
-  /// Check if map navigation is available
-  bool get hasCoordinates => latitude != null && longitude != null;
+  /// Check if map navigation is available and not 0.0
+  bool get hasCoordinates =>
+      latitude != null &&
+      longitude != null &&
+      latitude != 0.0 &&
+      longitude != 0.0;
 
   /// Google Maps URL for navigation
   String get mapsUrl => hasCoordinates

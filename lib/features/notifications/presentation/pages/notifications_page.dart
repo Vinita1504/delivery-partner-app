@@ -70,9 +70,22 @@ class NotificationsPage extends ConsumerWidget {
             ),
         ],
       ),
-      body: notifications.isEmpty
-          ? _buildEmptyState(context)
-          : _buildNotificationList(context, ref, notifications),
+      body: notificationState.isLoading && notifications.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : notifications.isEmpty
+              ? RefreshIndicator(
+                  onRefresh: () => ref.read(notificationProvider.notifier).fetchRemoteNotifications(),
+                  child: Stack(
+                    children: [
+                      ListView(physics: const AlwaysScrollableScrollPhysics()),
+                      _buildEmptyState(context),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: () => ref.read(notificationProvider.notifier).fetchRemoteNotifications(),
+                  child: _buildNotificationList(context, ref, notifications),
+                ),
     );
   }
 
