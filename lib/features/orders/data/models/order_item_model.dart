@@ -9,6 +9,7 @@ class OrderItemModel {
   final String? productId;
   final String productName;
   final int quantity;
+  final String? weight;
   final String? unit;
   @JsonKey(name: 'unitPrice')
   final double price;
@@ -23,6 +24,7 @@ class OrderItemModel {
     this.productId,
     required this.productName,
     required this.quantity,
+    this.weight,
     this.unit,
     required this.price,
     required this.totalPrice,
@@ -37,9 +39,13 @@ class OrderItemModel {
 
   Map<String, dynamic> toJson() => _$OrderItemModelToJson(this);
 
-  /// Formatted quantity with unit (e.g., "2 kg" or "2")
-  String get formattedQuantity =>
-      unit != null && unit!.isNotEmpty ? '$quantity $unit' : '$quantity';
+  /// Formatted quantity with unit (e.g., "1 kg" or "2")
+  String get formattedQuantity {
+    if (weight != null && weight!.isNotEmpty) {
+      return unit != null && unit!.isNotEmpty ? '$weight $unit' : weight!;
+    }
+    return unit != null && unit!.isNotEmpty ? '$quantity $unit' : '$quantity';
+  }
 
   /// Check if product has an image
   bool get hasImage => productImage != null && productImage!.isNotEmpty;
@@ -53,6 +59,7 @@ class OrderItemModel {
     String? productId,
     String? productName,
     int? quantity,
+    String? weight,
     String? unit,
     double? price,
     double? totalPrice,
@@ -66,6 +73,7 @@ class OrderItemModel {
       productId: productId ?? this.productId,
       productName: productName ?? this.productName,
       quantity: quantity ?? this.quantity,
+      weight: weight ?? this.weight,
       unit: unit ?? this.unit,
       price: price ?? this.price,
       totalPrice: totalPrice ?? this.totalPrice,

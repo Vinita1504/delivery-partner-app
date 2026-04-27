@@ -15,18 +15,36 @@ import '../../../../core/widgets/status_badge.dart';
 import '../providers/order_detail_provider.dart';
 
 /// Order details page - Show all info required to complete one order
-class OrderDetailsPage extends ConsumerWidget {
+class OrderDetailsPage extends ConsumerStatefulWidget {
   final String orderId;
 
   const OrderDetailsPage({super.key, required this.orderId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(orderDetailProvider(orderId));
+  ConsumerState<OrderDetailsPage> createState() => _OrderDetailsPageState();
+}
+
+class _OrderDetailsPageState extends ConsumerState<OrderDetailsPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Always fetch fresh order data when the page opens.
+    // This prevents stale Riverpod cache from showing old statuses
+    // (e.g., DELIVERED) instead of the current status (e.g., RETURN_PICKUP_ASSIGNED).
+    Future.microtask(() {
+      ref
+          .read(orderDetailProvider(widget.orderId).notifier)
+          .fetchOrderDetails(widget.orderId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(orderDetailProvider(widget.orderId));
 
     if (state.isLoading && !state.hasData) {
       return Scaffold(
-        appBar: AppBar(title: Text('Order #$orderId')),
+        appBar: AppBar(title: Text('Order #${widget.orderId}')),
         body: const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
@@ -35,7 +53,7 @@ class OrderDetailsPage extends ConsumerWidget {
 
     if (state.hasError) {
       return Scaffold(
-        appBar: AppBar(title: Text('Order #$orderId')),
+        appBar: AppBar(title: Text('Order #${widget.orderId}')),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -50,8 +68,8 @@ class OrderDetailsPage extends ConsumerWidget {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref
-                    .read(orderDetailProvider(orderId).notifier)
-                    .fetchOrderDetails(orderId),
+                    .read(orderDetailProvider(widget.orderId).notifier)
+                    .fetchOrderDetails(widget.orderId),
                 child: const Text('Retry'),
               ),
             ],
@@ -62,7 +80,7 @@ class OrderDetailsPage extends ConsumerWidget {
 
     if (!state.hasData) {
       return Scaffold(
-        appBar: AppBar(title: Text('Order #$orderId')),
+        appBar: AppBar(title: Text('Order #${widget.orderId}')),
         body: const Center(child: Text('Order not found')),
       );
     }
@@ -927,13 +945,13 @@ class OrderDetailsPage extends ConsumerWidget {
     WidgetRef ref,
     OrderModel order,
   ) async {
-    final notifier = ref.read(orderDetailProvider(orderId).notifier);
+    final notifier = ref.read(orderDetailProvider(widget.orderId).notifier);
 
     if (order.status == OrderStatus.outForDelivery) {
       // Already out for delivery - navigate to completion page
       if (order.isCod) {
         context.push(
-          '/order/$orderId/cod',
+          '/order/${widget.orderId}/cod',
           extra: {
             'amount': order.finalAmount > 0
                 ? order.finalAmount
@@ -941,8 +959,8 @@ class OrderDetailsPage extends ConsumerWidget {
           },
         );
       } else {
-        final state = ref.read(orderDetailProvider(orderId));
-        context.push('/order/$orderId/otp', extra: {'devOtp': state.devOtp});
+        final state = ref.read(orderDetailProvider(widget.orderId));
+        context.push('/order/${widget.orderId}/otp', extra: {'devOtp': state.devOtp});
       }
     } else if (order.status == OrderStatus.assigned) {
       await notifier.markAsPickedUp();
