@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/network_provider.dart';
 import '../../../../core/enums/enums.dart';
 import '../../../../core/services/local_notification_service.dart';
+import '../../../../core/utils/error_message_mapper.dart';
 import '../../../notifications/data/models/app_notification.dart';
 import '../../../notifications/presentation/providers/notification_provider.dart';
 import '../../data/datasources/order_remote_data_source.dart';
@@ -281,14 +282,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
   }
 
   String _getErrorMessage(dynamic error) {
-    if (error.toString().contains('SocketException') ||
-        error.toString().contains('Connection')) {
-      return 'No internet connection. Please check your network.';
-    }
-    if (error.toString().contains('TimeoutException')) {
-      return 'Request timed out. Please try again.';
-    }
-    return 'Something went wrong. Please try again.';
+    return ErrorMessageMapper.fromRaw(error);
   }
 }
 

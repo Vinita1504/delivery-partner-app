@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../errors/failures.dart';
+import '../../utils/error_message_mapper.dart';
 
 /// Interceptor to transform Dio errors into app-specific exceptions
 class ErrorInterceptor extends Interceptor {
@@ -67,6 +68,9 @@ class ErrorInterceptor extends Interceptor {
           data['error'] as String? ??
           'An error occurred';
     }
+    
+    // Parse the error using the mapper to format it nicely
+    message = ErrorMessageMapper.fromRaw(message);
 
     switch (statusCode) {
       case 400:
