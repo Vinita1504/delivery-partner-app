@@ -217,4 +217,17 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(UnknownFailure(message: e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> deleteAccount() async {
+    try {
+      await _authDataSource.deleteAccount();
+      await clearToken();
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message, statusCode: e.statusCode));
+    } catch (e) {
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
 }

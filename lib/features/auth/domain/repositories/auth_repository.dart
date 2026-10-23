@@ -53,6 +53,9 @@ abstract class AuthRepository {
   /// Save token
   Future<void> saveToken(String token);
 
+  /// Delete delivery agent account
+  Future<Either<Failure, void>> deleteAccount();
+
   /// Clear token
   Future<void> clearToken();
 }

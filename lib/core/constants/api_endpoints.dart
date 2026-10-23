@@ -18,6 +18,7 @@ class ApiEndpoints {
 
   // Delivery Agent
   static const String deliveryAgent = '/delivery-agent';
+  static const String deleteAccount = '$deliveryAgent/account';
   static const String dashboard = '$deliveryAgent/dashboard';
   static const String assignedOrders = '$deliveryAgent/orders';
   static const String orderHistory = '$deliveryAgent/orders/history';

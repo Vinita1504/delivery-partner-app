@@ -100,6 +100,25 @@ class AuthController extends StateNotifier<AuthState> {
     );
   }
 
+  /// Delete delivery agent account
+  Future<bool> deleteAccount() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    final result = await _authRepository.deleteAccount();
+    return result.fold(
+      (failure) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: failure.message,
+        );
+        return false;
+      },
+      (_) {
+        state = const AuthState();
+        return true;
+      },
+    );
+  }
+
   Future<bool> forgotPasswordSendOtp(String phone) async {
     state = state.copyWith(isLoading: true, clearError: true);
     final result = await _authRepository.forgotPasswordSendOtp(phone);

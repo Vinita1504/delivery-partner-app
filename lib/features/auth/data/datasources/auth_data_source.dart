@@ -19,4 +19,7 @@ abstract class AuthDataSource {
     String otpCode,
     String newPassword,
   );
+
+  /// Delete delivery agent account
+  Future<void> deleteAccount();
 }
