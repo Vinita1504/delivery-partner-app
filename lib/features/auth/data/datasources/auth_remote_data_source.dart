@@ -197,4 +197,31 @@ class AuthRemoteDataSource implements AuthDataSource {
       );
     }
   }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      final response = await _dioClient.delete(ApiEndpoints.deleteAccount);
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw ServerException(
+          message: response.data?['message'] ?? 'Failed to delete account',
+          statusCode: response.statusCode,
+        );
+      }
+    } on DioException catch (e) {
+      if (e.error is ServerException) {
+        throw e.error!;
+      }
+      final serverMsg =
+          e.response?.data is Map ? e.response?.data['message'] : null;
+      throw ServerException(
+        message: serverMsg ??
+            (e.type == DioExceptionType.connectionTimeout ||
+                    e.type == DioExceptionType.receiveTimeout
+                ? 'Connection timed out. Please check your internet connection.'
+                : 'Unable to delete account. Please try again.'),
+        statusCode: e.response?.statusCode,
+      );
+    }
+  }
 }

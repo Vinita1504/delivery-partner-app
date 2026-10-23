@@ -12,7 +12,6 @@ import '../../../../core/utils/validators.dart';
 import '../../../../main.dart'; // Import for scaffoldMessengerKey
 import '../controllers/auth_controller.dart';
 import '../controllers/auth_state.dart';
-
 /// Login page - Authenticate delivery partner (simple, no animations)
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});

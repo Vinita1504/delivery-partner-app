@@ -11,14 +11,10 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
-    <!-- Background / Foreground Service (for delivery tracking) -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-
     <application
-        android:label="delivery_partner_app"
+        android:label="Dehaat Delivery Partner"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">
+        android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
             android:exported="true"

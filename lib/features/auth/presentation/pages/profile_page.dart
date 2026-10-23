@@ -73,6 +73,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
                   // Logout Button
                   _buildLogoutButton(),
+                  const SizedBox(height: 12),
+
+                  // Delete Account Button
+                  _buildDeleteAccountButton(),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -394,5 +398,96 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         colors: [Colors.red.shade400, Colors.red.shade600],
       ),
     ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildDeleteAccountButton() {
+    return Center(
+      child: TextButton.icon(
+        onPressed: _showDeleteAccountConfirmation,
+        icon: Icon(
+          Icons.delete_forever_rounded,
+          color: Colors.red.shade400,
+          size: 20,
+        ),
+        label: Text(
+          'Delete Account',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Colors.red.shade400,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.1);
+  }
+
+  Future<void> _showDeleteAccountConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'Are you sure you want to delete your delivery partner account? This action is permanent and will deactivate your access.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete Account'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final success =
+          await ref.read(authControllerProvider.notifier).deleteAccount();
+
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
+
+        if (success) {
+          scaffoldMessengerKey.currentState?.showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text('Your account has been deleted.'),
+                ],
+              ),
+              backgroundColor: Colors.green.shade600,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else {
+          final error = ref.read(authControllerProvider).errorMessage ??
+              'Failed to delete account. Please try again.';
+          scaffoldMessengerKey.currentState?.showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(error)),
+                ],
+              ),
+              backgroundColor: Colors.red.shade600,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
   }
 }
